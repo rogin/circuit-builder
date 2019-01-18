@@ -1,0 +1,18 @@
+COMPONENTS
+    AND g1
+    nand g2
+
+ALIASES
+    A = IN#1
+    B = IN#2
+
+CONNECTIONS
+$ AND
+    g1#1 - A
+    g1#2 - B
+    g1#3 - OUT#1
+$ NAND
+    g2#1 - A
+    g2#2 - B
+    g2#3 - OUT#2
+END

@@ -2,7 +2,5 @@ COMPONENTS
     NOT g1
 
 CONNECTIONS
-
-$ NOT
     g1#1 - IN#1
 END

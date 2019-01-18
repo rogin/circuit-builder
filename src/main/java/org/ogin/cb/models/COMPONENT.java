@@ -26,6 +26,10 @@ public abstract class COMPONENT {
       return( type );
    }
 
+   public int getNumberOfPins() {
+      return numberOfINPins;
+   }
+
    public void SetINPinsToUNK()
    {
       for (int i = 1; i <= numberOfINPins; i++)

@@ -3,6 +3,7 @@ package org.ogin.cb;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -43,6 +44,52 @@ public class Circuit {
         numberOfAliases = 0;
         numberOfConnections = 0;
     }
+
+    public CircuitData getData() {
+      CircuitData data = new CircuitData();
+
+      List<COMPONENT> componentList = new ArrayList<>(numberOfComponents);
+      for(int i = 1; i <= numberOfComponents; i++) {
+         componentList.add(components[i]);
+      }
+      data.setComponents(componentList);
+
+      List<ALIAS> aliasList = new ArrayList<>(numberOfAliases);
+      for(int i = 1; i <= numberOfAliases; i++) {
+        aliasList.add(toExportableAlias(aliases[i]));
+      }
+      data.setAliases(aliasList);
+
+      List<CONNECTION> connectionList = new ArrayList<>(numberOfConnections);
+      for(int i = 1; i <= numberOfConnections; i++) {
+         connectionList.add(toExportableConnection(connections[i]));
+      }
+      data.setConnections(connectionList);
+
+      return data;
+   }
+
+   private CONNECTION toExportableConnection(CONNECTION input) {
+      return new CONNECTION(toExportableNode(input.getNode1()), toExportableNode((input.getNode2())));
+   }
+
+   private ALIAS toExportableAlias(ALIAS input) {
+     return new ALIAS(input.getIdentifier(), toExportableNode(input.getNode()));
+   }
+
+   private NODE toExportableNode(NODE inputNode) {
+      NODE newNode = new NODE();
+      newNode.integer = inputNode.integer;
+      newNode.INOrOUT = inputNode.INOrOUT;
+      newNode.index = inputNode.index;
+
+      //pointed to a user-defined component which is 1-based
+      if(newNode.index <= numberOfComponents) {
+         newNode.index --;
+      }
+
+      return newNode;
+   }
 
     public void load(String sourceFileName) throws SDLException {
         String fullFilename = sourceFileName + ".sdl";
@@ -281,7 +328,7 @@ gate#(OUT)|   N     Y          Y           N     N      N
           ProcessSyntaxError(ErrorType.EXPECTING_IDENTIFIER);
        }
        String identifier = asString(lexeme);
-       found = FindComponentIdentifier(identifier, null);
+       found = FindComponentIdentifier(identifier, new NODE());
        if ( found ) {
           ProcessSyntaxError(ErrorType.MULTIPLY_DEFINED_IDENTIFIER);
        }
@@ -329,13 +376,14 @@ gate#(OUT)|   N     Y          Y           N     N      N
     */
        String identifier;
        boolean found;
+       NODE unusedNode = new NODE();
     
        if ( inputToken != TokenType.IDENTIFIER )
           ProcessSyntaxError(ErrorType.EXPECTING_IDENTIFIER);
        identifier = asString(inputLex);
-       if ( FindAliasIdentifier(identifier) != null )
+       if ( FindAliasIdentifier(identifier, unusedNode) )
           ProcessSyntaxError(ErrorType.MULTIPLY_DEFINED_IDENTIFIER);
-       found = FindComponentIdentifier(identifier, null);
+       found = FindComponentIdentifier(identifier, unusedNode);
        if ( found )
           ProcessSyntaxError(ErrorType.MULTIPLY_DEFINED_IDENTIFIER);
        inputToken = GetNextToken();
@@ -405,7 +453,7 @@ gate#(OUT)|   N     Y          Y           N     N      N
              break;
           case IDENTIFIER:
             String identifier = asString(lexeme);
-             if ( FindAliasIdentifier(identifier) != null )
+             if ( FindAliasIdentifier(identifier, node) )
                 inputToken = GetNextToken();
              else
              {
@@ -460,10 +508,10 @@ gate#(OUT)|   N     Y          Y           N     N      N
        aliases[numberOfAliases] = new ALIAS(identifier, node);
     }
 
-    private NODE FindAliasIdentifier(String identifier)
+    private boolean FindAliasIdentifier(String identifier, NODE node)
     //----------------------------------------------------
     {
-       NODE node = null;
+       //NODE node = null;
         //char uIdentifier1[IDENTIFIERLENGTH+1];
 
        boolean found = false;
@@ -479,14 +527,18 @@ gate#(OUT)|   N     Y          Y           N     N      N
           //   uIdentifier2[i] = toupper(aliases[index].identifier[i]);
           if ( StringUtils.equalsAnyIgnoreCase(identifier, aliases[index].getIdentifier()) )
           {
-             node = aliases[index].getNode();
+             NODE foundNode = aliases[index].getNode();
+             node.index = foundNode.index;
+             node.INOrOUT = foundNode.INOrOUT;
+             node.integer = foundNode.integer;
+
              found = true;
           }
           else
              index++;
        }
 
-       return node;
+       return found;
     }
 
     private String asString(char[] chars) {
@@ -516,9 +568,7 @@ gate#(OUT)|   N     Y          Y           N     N      N
        }
 
        //workaround for C++ code passing in the index by ref
-       if(node != null) {
-           node.index = index;
-       }
+       node.index = index;
 
        return found;
     }
