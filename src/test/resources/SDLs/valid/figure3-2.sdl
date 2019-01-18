@@ -1,0 +1,36 @@
+COMPONENTS
+    AND g1
+    nand g2
+    or g3
+    nor g4
+    xor g5
+    not g6
+
+ALIASES
+    A = IN#1
+    B = IN#2
+
+CONNECTIONS
+$ AND
+    g1#1 - A
+    g1#2 - B
+    g1#3 - OUT#1
+$ NAND
+    g2#1 - A
+    g2#2 - B
+    g2#3 - OUT#2
+$ OR
+    g3#1 - A
+    g3#2 - B
+    g3#3 - OUT#3
+$ NOR
+    g4#1 - A
+    g4#2 - B
+    g4#3 - OUT#4
+$ XOR
+    g5#1 - A
+    g5#2 - B
+    g5#3 - OUT#5
+$ NOT
+    g6#1 - A
+END

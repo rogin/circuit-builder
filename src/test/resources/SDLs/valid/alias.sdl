@@ -1,0 +1,9 @@
+COMPONENTS
+    NOT g1
+
+ALIASES
+    A = IN#1
+
+CONNECTIONS
+    g1#1 - A
+END
