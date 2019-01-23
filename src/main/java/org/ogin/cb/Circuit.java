@@ -1,5 +1,6 @@
 package org.ogin.cb;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
@@ -17,7 +18,7 @@ import org.ogin.cb.parser.*;
 public class Circuit {
     //private char[] fileName; //Constants.IDENTIFIERLENGTH+1
     
-    private int   characterNumber,pageNumber;
+    //private int   characterNumber,pageNumber;
 
     //used within SimulateLogic()
     private StateType  INs[] = new StateType[Constants.MAXIMUMINOUTS+1];
@@ -91,43 +92,65 @@ public class Circuit {
       return newNode;
    }
 
-    public void load(String sourceFileName) throws SDLException {
-        String fullFilename = sourceFileName + ".sdl";
+   /**
+    * Load a file according to Dr. Hanna's spec where the filename lacks the ".sdl" extension.
+    * @param sourceFileName
+    * @throws SDLException
+    */
+   public void load(String sourceFileName) throws SDLException {
+      String fullFilename = sourceFileName + ".sdl";
+      ReadFile(fullFilename);
+      //verify can write log file
+      // strcpy(fullFilename,sourceFilename);
+      // strcat(fullFilename,".log");
+      // if ( (LOG = fopen(fullFilename,"w")) == NULL) {
+      //     ProcessRuntimeError(ErrorType.ERROR_OPENING_LOG_FILE,fullFilename);
+      // }
+      ParseCircuit();
+      // fprintf(LOG,"%4d characters, %3d lines\n",characterNumber,lineNumber);
+      // fprintf(LOG," %3d components (%s...%s)\n",numberOfComponents,
+      // components[1]->identifier,components[numberOfComponents]->identifier);
+      // fprintf(LOG," %3d connections\n",numberOfConnections);
+      //   printf("%4d characters, %3d lines\n",characterNumber,lineNumber);
+      //   printf(" %3d components (%s...%s)\n",numberOfComponents,
+      //      components[1]->identifier,components[numberOfComponents]->identifier);
+      //   printf(" %3d connections\n",numberOfConnections);
+      //fclose(LOG);
+   }
 
-        ReadFile(fullFilename);
+   /**
+    * Load the SDL spec from the specified file.
+    * @param file
+    * @throws SDLException
+    */
+   public void load(File file) throws SDLException {
+      ReadFile(file);
+      ParseCircuit();
+   }
 
-        //verify can write log file
-        // strcpy(fullFilename,sourceFilename);
-        // strcat(fullFilename,".log");
-        // if ( (LOG = fopen(fullFilename,"w")) == NULL) {
-        //     ProcessRuntimeError(ErrorType.ERROR_OPENING_LOG_FILE,fullFilename);
-        // }
-        ParseCircuit();
-        // fprintf(LOG,"%4d characters, %3d lines\n",characterNumber,lineNumber);
-        // fprintf(LOG," %3d components (%s...%s)\n",numberOfComponents,
-        // components[1]->identifier,components[numberOfComponents]->identifier);
-        // fprintf(LOG," %3d connections\n",numberOfConnections);
-        //   printf("%4d characters, %3d lines\n",characterNumber,lineNumber);
-        //   printf(" %3d components (%s...%s)\n",numberOfComponents,
-        //      components[1]->identifier,components[numberOfComponents]->identifier);
-        //   printf(" %3d connections\n",numberOfConnections);
-        //fclose(LOG);
-    }
+   private void ReadFile(String fullFilename) throws SDLException {
+      URL resource = this.getClass().getResource(fullFilename);
 
-    private void ReadFile(String fullFilename) throws SDLException {
-        URL resource = this.getClass().getResource(fullFilename);
-
-        if(resource == null) {
+      if(resource == null) {
+         ProcessRuntimeError(ErrorType.ERROR_OPENING_SOURCE_FILE, fullFilename);
+      } else {
+         try(FileReader reader = new FileReader(resource.getFile())) {
+         List<String> sourceLines = IOUtils.readLines(reader);
+         sourceLinesIterator = sourceLines.iterator();
+         }catch(IOException e) {
             ProcessRuntimeError(ErrorType.ERROR_OPENING_SOURCE_FILE, fullFilename);
-        } else {
-            try(FileReader reader = new FileReader(resource.getFile())) {
-                List<String> sourceLines = IOUtils.readLines(reader);
-                sourceLinesIterator = sourceLines.iterator();
-            }catch(IOException e) {
-                ProcessRuntimeError(ErrorType.ERROR_OPENING_SOURCE_FILE, fullFilename);
-            }
-        }
-    }
+         }
+      }
+   }
+
+   private void ReadFile(File fileToRead) throws SDLException {
+      try(FileReader reader = new FileReader(fileToRead)) {
+         List<String> sourceLines = IOUtils.readLines(reader);
+         sourceLinesIterator = sourceLines.iterator();
+      }catch(IOException e) {
+         ProcessRuntimeError(ErrorType.ERROR_OPENING_SOURCE_FILE, fileToRead.getAbsolutePath());
+      }
+  }
 
     private void ParseCircuit(/*TokenType token,char lexeme[]*/) throws SDLException
     //----------------------------------------------------
@@ -146,9 +169,9 @@ public class Circuit {
         
 
         atEOF = false;
-        characterNumber = 0;
+        //characterNumber = 0;
         lineNumber = 0;
-        pageNumber = 0;
+        //pageNumber = 0;
         GetNextSourceLine();
         GetNextCharacter();
         token = GetNextToken();
@@ -791,7 +814,7 @@ gate#(OUT)|   N     Y          Y           N     N      N
           lineNumber++;
           if ( lineNumber % 50 == 1 )
           {
-             pageNumber++;
+             //pageNumber++;
              //final char FF = 0X0C;
             //  fprintf(LOG,"%cPage %4d\n",FF,pageNumber);
             //  fprintf(LOG,"\n");
@@ -820,7 +843,7 @@ gate#(OUT)|   N     Y          Y           N     N      N
              atEOL = true;
           }
        }
-       characterNumber++;
+       //characterNumber++;
     }
 
     private int strlen(char[] array) {

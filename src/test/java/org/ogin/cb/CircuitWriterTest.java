@@ -1,25 +1,25 @@
 package org.ogin.cb;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Path;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junitpioneer.jupiter.TempDirectory;
+import org.junitpioneer.jupiter.TempDirectory.TempDir;
 import org.ogin.cb.parser.SDLException;
 
+@ExtendWith(TempDirectory.class)
 public class CircuitWriterTest {
 
     private static final String SDL_FILE = "/SDLs/valid/figure3-2";
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-
     @Test
-    public void writesValidFile() throws IOException {
+    public void writesValidFile(@TempDir Path tempFolder) throws IOException {
         Circuit c = new Circuit();
         CircuitData data = null;
 
@@ -32,8 +32,7 @@ public class CircuitWriterTest {
         }
 
         if(data != null) {
-            File outputFile = tempFolder.newFile("test-output.sdl");
-            System.err.println(outputFile.getAbsolutePath());
+            File outputFile = new File(tempFolder.toFile(), "test-output.sdl");
             try(PrintStream out = new PrintStream(outputFile)) {
                 CircuitWriter writer = new CircuitWriter(out, data);
                 writer.write();
