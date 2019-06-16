@@ -1,4 +1,4 @@
-package org.ogin.cb.gui;
+package org.ogin.cb.gui.menu;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -11,18 +11,21 @@ import javax.swing.AbstractAction;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-public class OpenFileAction extends AbstractAction {
-    public static final String SELECTED_FILE_CHANGED_PROPERTY = "selectedFile";
-    
+import org.ogin.cb.gui.PropertyNames;
+
+public class ValidateFileAction extends AbstractAction {
+
+    private static final long serialVersionUID = 5453722787064179612L;
+
     private Component parent;
     private File selectedFile;
     private JFileChooser fileChooser;
     private PropertyChangeSupport pcs;
 
-    public OpenFileAction(Component parent) {
+    public ValidateFileAction(Component parent) {
         this.parent = parent;
-        putValue(NAME, "Open...");
-        putValue(MNEMONIC_KEY, KeyEvent.VK_O);
+        putValue(NAME, "Validate File");
+        putValue(MNEMONIC_KEY, KeyEvent.VK_V);
 
         fileChooser = new JFileChooser();
         fileChooser.setAcceptAllFileFilterUsed(false);
@@ -39,7 +42,7 @@ public class OpenFileAction extends AbstractAction {
         if(returnVal == JFileChooser.APPROVE_OPTION) {
             File oldFile = selectedFile;
             selectedFile = fileChooser.getSelectedFile();
-            pcs.firePropertyChange(SELECTED_FILE_CHANGED_PROPERTY, oldFile, selectedFile);
+            pcs.firePropertyChange(PropertyNames.Validate.name(), oldFile, selectedFile);
         }
     }
 
