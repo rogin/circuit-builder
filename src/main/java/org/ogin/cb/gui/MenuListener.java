@@ -3,36 +3,54 @@ package org.ogin.cb.gui;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import javax.swing.SwingWorker;
 
 import org.ogin.cb.Circuit;
 import org.ogin.cb.CircuitData;
+import org.ogin.cb.CircuitWriter;
 import org.ogin.cb.parser.SDLException;
 
 public class MenuListener implements PropertyChangeListener {
     private DialogProvider dialogProvider;
-    
-    public MenuListener(DialogProvider dialogProvider) {
-        this.dialogProvider = dialogProvider;
-	}
+    private Supplier<CircuitData> dataSupplier;
 
-	@Override
+    public MenuListener(DialogProvider dialogProvider, Supplier<CircuitData> dataSupplier) {
+        this.dialogProvider = dialogProvider;
+        this.dataSupplier = dataSupplier;
+    }
+
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         // TODO utilize load / save icons
 
         if (PropertyNames.Open.name() == evt.getPropertyName()) {
-            openFile((File)evt.getNewValue());
-        } else if(PropertyNames.Validate.name() == evt.getPropertyName()) {
-            validateFile((File)evt.getNewValue());
-        } else if(PropertyNames.SaveAs.name() == evt.getPropertyName()) {
-            saveFile((File)evt.getNewValue());
+            openFile((File) evt.getNewValue());
+        } else if (PropertyNames.Validate.name() == evt.getPropertyName()) {
+            validateFile((File) evt.getNewValue());
+        } else if (PropertyNames.SaveAs.name() == evt.getPropertyName()) {
+            saveFile((File) evt.getNewValue());
         }
     }
 
     private void saveFile(File file) {
-        //TODO save data to file
+        CircuitData data = dataSupplier.get();
+
+        boolean success = false;
+        try {
+            CircuitWriter.write(data, file.getAbsolutePath());
+            success = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            dialogProvider.notifyError("Save failed", e.getMessage());
+        }
+
+        if(success) {
+            dialogProvider.notifyInfo("Success", "Data written.");
+        }
     }
 
     private void openFile(File file) {

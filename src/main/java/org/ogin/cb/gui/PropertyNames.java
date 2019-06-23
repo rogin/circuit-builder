@@ -1,5 +1,5 @@
 package org.ogin.cb.gui;
 
 public enum PropertyNames {
-    Open, SaveAs, Validate;
+    New, Open, SaveAs, Validate;
 }

@@ -1,22 +1,15 @@
 package org.ogin.cb.gui;
 
-import javax.swing.Action;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
-
-import org.ogin.cb.gui.menu.*;
 
 public class MainFrame extends JFrame implements DialogProvider {
 
     private static final long serialVersionUID = 7546234560603703591L;
 
-    //private MainContentPanel contentPanel;
     private MainMenuBar menuBar;
-    private OpenFileAction openFileAction;
-    private SaveAsFileAction saveAsFileAction;
-    private ValidateFileAction validateFileAction;
-    private MenuListener menuListener;
+    private Canvas canvas;
 
     public MainFrame() {
         super("Circuit Builder");
@@ -25,7 +18,6 @@ public class MainFrame extends JFrame implements DialogProvider {
 
     private void init() {
         createContentPanel();
-        createFileActions();
         createMenuBar();
         attachPropertyChangeListeners();
 
@@ -35,19 +27,11 @@ public class MainFrame extends JFrame implements DialogProvider {
     }
 
     private void createContentPanel() {
-        //contentPanel = new MainContentPanel();
-        //setContentPane(contentPanel);
-        
-        JSplitPane s = new JSplitPane();
-        s.setLeftComponent(new Drawer());
-        s.setRightComponent(new MainContentPanel());
-        setContentPane(s);
-    }
-
-    private void createFileActions() {
-        openFileAction = new OpenFileAction(this);
-        validateFileAction = new ValidateFileAction(this);
-        saveAsFileAction = new SaveAsFileAction(this);
+        JSplitPane splitPane = new JSplitPane();
+        splitPane.setLeftComponent(new Drawer());
+        canvas = new Canvas();
+        splitPane.setRightComponent(canvas);
+        setContentPane(splitPane);
     }
 
     private void createMenuBar() {
@@ -56,34 +40,11 @@ public class MainFrame extends JFrame implements DialogProvider {
     }
 
     private void attachPropertyChangeListeners() {
-        menuListener = new MenuListener(this);
-        openFileAction.addPropertyChangeListener(menuListener);
-        saveAsFileAction.addPropertyChangeListener(menuListener);
-        validateFileAction.addPropertyChangeListener(menuListener);
-    }
-
-    private void detachPropertyChangeListeners() {
-        openFileAction.removePropertyChangeListener(menuListener);
-        saveAsFileAction.removePropertyChangeListener(menuListener);
-        validateFileAction.removePropertyChangeListener(menuListener);
-    }
-
-    public Action getOpenFileAction() {
-        return openFileAction;
-    }
-
-    public Action getSaveAsFileAction() {
-        return saveAsFileAction;
-    }
-
-	public Action getValidateFileAction() {
-		return validateFileAction;
-    }
-    
-    @Override
-    public void dispose() {
-        detachPropertyChangeListeners();
-        super.dispose();
+        MenuListener menuListener = new MenuListener(this, canvas::getModelData);
+        menuBar.getNewFileAction().addPropertyChangeListener(canvas);
+        menuBar.getOpenFileAction().addPropertyChangeListener(menuListener);
+        menuBar.getSaveAsFileAction().addPropertyChangeListener(menuListener);
+        menuBar.getValidateFileAction().addPropertyChangeListener(menuListener);
     }
 
     @Override

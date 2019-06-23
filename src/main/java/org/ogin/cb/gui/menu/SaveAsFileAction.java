@@ -18,7 +18,7 @@ import org.ogin.cb.gui.PropertyNames;
 public class SaveAsFileAction extends AbstractAction {
     private static final long serialVersionUID = -5613801065299062965L;
 
-    private static final String SDL_EXTENSION = "SDL";
+    private static final String SDL_EXTENSION = "sdl";
     
     private Component parent;
     private File selectedFile;
@@ -63,7 +63,7 @@ public class SaveAsFileAction extends AbstractAction {
         File result = file;
 
         String filename = file.getName();
-        if(!StringUtils.endsWith(StringUtils.upperCase(filename), "." + SDL_EXTENSION)) {
+        if(!StringUtils.endsWith(StringUtils.lowerCase(filename), "." + SDL_EXTENSION)) {
             result = new File(file.getParentFile(), filename + '.' + SDL_EXTENSION);
         }
 
