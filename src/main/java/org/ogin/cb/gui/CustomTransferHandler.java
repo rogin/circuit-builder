@@ -1,5 +1,6 @@
 package org.ogin.cb.gui;
 
+import java.awt.Component;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -14,14 +15,21 @@ public class CustomTransferHandler extends TransferHandler {
 
     private static final long serialVersionUID = 8909797536899451637L;
 
+    private Component component;
     private BiConsumer<Point, AbstractGate> callback;
 
-    public CustomTransferHandler(BiConsumer<Point, AbstractGate> callback) {
+    public CustomTransferHandler(Component component, BiConsumer<Point, AbstractGate> callback) {
+        this.component = component;
         this.callback = callback;
     }
 
     public boolean canImport(TransferHandler.TransferSupport support) {
         if(!support.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+            return false;
+        }
+
+        //avoid dropping onto existing child components
+        if(isOverChildComponent(support)) {
             return false;
         }
 
@@ -33,6 +41,13 @@ public class CustomTransferHandler extends TransferHandler {
 
         // COPY is not supported, so reject the transfer
         return false;
+    }
+
+    private boolean isOverChildComponent(TransferSupport support) {
+        Point point = support.getDropLocation().getDropPoint();
+
+        Component compAtLocation = component.getComponentAt(point);
+        return compAtLocation != null && !compAtLocation.equals(component);
     }
 
     public boolean importData(TransferHandler.TransferSupport info) {

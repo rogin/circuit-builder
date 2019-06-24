@@ -2,8 +2,6 @@ package org.ogin.cb.gui;
 
 import java.awt.Component;
 import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Insets;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.event.KeyAdapter;
@@ -64,7 +62,7 @@ public class Canvas extends JPanel implements PropertyChangeListener {
         // if we enable grid snapping, ensure new items are created on the boundary
         // mover.setSnapSize(new Dimension(10, 10));
 
-        setTransferHandler(new CustomTransferHandler(this::attachComponent));
+        setTransferHandler(new CustomTransferHandler(this, this::attachComponent));
 
         debugFocus();
 
