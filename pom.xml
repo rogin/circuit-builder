@@ -14,12 +14,13 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.ogin.cb</groupId>
   <artifactId>circuit-builder</artifactId>
-  <version>0.1</version>
+  <version>0.2</version>
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <junit.jupiter.version>5.3.2</junit.jupiter.version>
+    <junit.jupiter.version>5.4.2</junit.jupiter.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<main.java.class>org.ogin.cb.gui.Main</main.java.class>
   </properties>
   <dependencies>
     <dependency>
@@ -31,7 +32,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.8.1</version>
+      <version>3.9</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -100,20 +101,16 @@
       </testResource>
     </testResources>
     <directory>target</directory>
-    <finalName>circuit-builder-0.1</finalName>
+    <finalName>circuit-builder-${project.version}</finalName>
     <pluginManagement>
       <plugins>
         <plugin>
           <artifactId>maven-antrun-plugin</artifactId>
-          <version>1.3</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-assembly-plugin</artifactId>
-          <version>2.2-beta-5</version>
+          <version>1.8</version>
         </plugin>
         <plugin>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>2.8</version>
+          <version>3.1.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
@@ -124,7 +121,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>2.5</version>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <id>default-clean</id>
@@ -137,7 +134,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>2.6</version>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <id>default-testResources</id>
@@ -157,7 +154,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
+        <version>3.1.2</version>
         <executions>
           <execution>
             <id>default-jar</id>
@@ -165,12 +162,19 @@
             <goals>
               <goal>jar</goal>
             </goals>
+            <configuration>
+              <archive>
+                <manifest>
+                  <mainClass>${main.java.class}</mainClass>
+                </manifest>
+              </archive>
+            </configuration>
           </execution>
         </executions>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
+        <version>3.8.1</version>
         <executions>
           <execution>
             <id>default-compile</id>
@@ -203,7 +207,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-install-plugin</artifactId>
-        <version>2.4</version>
+        <version>2.5.2</version>
         <executions>
           <execution>
             <id>default-install</id>
@@ -216,7 +220,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-deploy-plugin</artifactId>
-        <version>2.7</version>
+        <version>2.8.2</version>
         <executions>
           <execution>
             <id>default-deploy</id>
@@ -229,7 +233,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-site-plugin</artifactId>
-        <version>3.3</version>
+        <version>3.7.1</version>
         <executions>
           <execution>
             <id>default-site</id>
@@ -268,6 +272,14 @@
           <outputDirectory>target\site</outputDirectory>
         </configuration>
       </plugin>
+	  <plugin>
+	    <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.6.0</version>
+        <configuration>
+          <mainClass>${main.java.class}</mainClass>
+        </configuration>
+	  </plugin>
     </plugins>
   </build>
   <reporting>
