@@ -1,8 +1,8 @@
 package org.ogin.cb.gui.components;
 
-import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.GeneralPath;
 
 import javax.swing.JComponent;
@@ -19,19 +19,17 @@ public final class GatePainter {
         final int leftOffset = 10;
         drawOr(g2, component, false, leftOffset);
 
-        Dimension dim = component.getSize();
-
         GeneralPath path = new GeneralPath();
         path.moveTo(5, 5);
-        path.curveTo(5, 5, 20, 20, 5, dim.height-5);
+        path.curveTo(5, 5, 20, 20, 5,  component.getHeight()-5);
 
         g2.draw(path);
 	}
     
     private static void drawOr(Graphics2D g2, JComponent component, boolean includeNotIndicator, int leftOffset) {
-        Dimension dim = component.getSize();
-        int xPoints[] = {leftOffset, dim.width/2, dim.width-5, dim.width/2, leftOffset, leftOffset};
-        int yPoints[] = {5, 5, dim.height/2, dim.height-5, dim.height-5, 5};
+        Rectangle bounds = component.getBounds();
+        int xPoints[] = {leftOffset, bounds.width/2, bounds.width-5, bounds.width/2, leftOffset, leftOffset};
+        int yPoints[] = {5, 5, bounds.height/2, bounds.height-5, bounds.height-5, 5};
 
         GeneralPath path = new GeneralPath();
 
@@ -92,9 +90,9 @@ public final class GatePainter {
     public static void paintAnd(Graphics g, JComponent component, boolean includeNotIndicator) {
         Graphics2D g2 = (Graphics2D)g;
 
-        Dimension dim = component.getSize();
-        int xPoints[] = {5, dim.width/2, dim.width-5, dim.width/2, 5};
-        int yPoints[] = {5, 5, dim.height/2, dim.height-5, dim.height-5};
+        Rectangle bounds = component.getBounds();
+        int xPoints[] = {5, bounds.width/2, bounds.width-5, bounds.width/2, 5};
+        int yPoints[] = {5, 5, bounds.height/2, bounds.height-5, bounds.height-5};
 
         GeneralPath path = new GeneralPath();
 

@@ -10,7 +10,7 @@ public class AndGate extends AbstractGate {
     public AndGate() {
         super("AndGate");
 
-        inPins = createInPins(2, 3);
+        inPins = createInPins(2);
 
         setToolTipText("AND");
     }

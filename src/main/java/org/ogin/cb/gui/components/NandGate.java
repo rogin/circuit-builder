@@ -10,7 +10,7 @@ public class NandGate extends AbstractGate {
     public NandGate() {
         super("NandGate");
 
-        inPins = createInPins(2, 3);
+        inPins = createInPins(2);
 
         setToolTipText("NAND");
     }

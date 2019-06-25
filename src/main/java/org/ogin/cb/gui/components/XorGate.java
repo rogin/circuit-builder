@@ -9,7 +9,7 @@ public class XorGate extends AbstractGate {
     public XorGate() {
         super("XorGate");
 
-        createInPins(2, 3);
+        createInPins(2);
 
         setToolTipText("XOR");
     }

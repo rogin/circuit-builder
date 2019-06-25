@@ -16,11 +16,13 @@ import javax.swing.border.Border;
 public abstract class AbstractGate extends JComponent {
     private static final long serialVersionUID = -2171942032839935522L;
 
-    private static final Border DEFAULT_BORDER = BorderFactory.createLineBorder(Color.BLACK);
-    private static final Border FOCUSED_BORDER = BorderFactory.createLineBorder(Color.YELLOW);
+    private static final Border DEFAULT_BORDER = BorderFactory.createEtchedBorder();
+    private static final Border FOCUSED_BORDER = BorderFactory.createEtchedBorder(Color.blue, Color.blue);
     
     protected String name;
     protected boolean movable;
+
+    protected Pin outPin;
 
     public AbstractGate(String name) {
         this(name, true);
@@ -41,9 +43,27 @@ public abstract class AbstractGate extends JComponent {
         setDefaultBorder();
         //listen for focus events
         enableEvents(AWTEvent.FOCUS_EVENT_MASK);
+        createOutPin();
     }
 
-    protected Pin[] createInPins(int count, int sections) {
+    private void createOutPin() {
+        final int sections = 3;
+        double sectionHeight = getBounds().getHeight() / sections;
+
+        outPin = new Pin(false);
+
+        Point location = new Point();
+        location.x = getWidth()-outPin.getWidth();
+        location.y = (int)(sectionHeight*(sections-1))-(outPin.getHeight()/2);
+
+        attachPin(outPin, location);
+    }
+
+    protected Pin[] createInPins(int count) {
+        return createInPins(count, count+1);
+    }
+
+    private Pin[] createInPins(int count, int sections) {
         Pin[] createdPins = new Pin[count];
 
         //split our height into specified # of sections
@@ -60,10 +80,8 @@ public abstract class AbstractGate extends JComponent {
             
             double sectionStart = sectionHeight * currentSection;
 
-            Dimension dims = pin.getSize();
-
             //subtract half of pin's size so its middle touches our boundary line
-            location.y = (int)(sectionStart - (dims.getHeight()/2));
+            location.y = (int)(sectionStart - (pin.getHeight()/2));
 
             attachPin(pin, location);
 

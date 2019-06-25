@@ -8,7 +8,7 @@ public class NorGate extends AbstractGate {
 	public NorGate() {
         super("NorGate");
 
-        createInPins(2, 3);
+        createInPins(2);
 
         setToolTipText("NOR");
     }

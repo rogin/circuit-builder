@@ -5,9 +5,10 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 
 import javax.swing.JComponent;
-import javax.swing.RepaintManager;
 
 public class Pin extends JComponent {
+    private static final long serialVersionUID = 2800439609879647896L;
+    
     private boolean isIn;
     
     public Pin(boolean isIn) {

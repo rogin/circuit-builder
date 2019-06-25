@@ -13,7 +13,7 @@ public class NotGate extends AbstractGate {
 	public NotGate() {
         super("NotGate");
 
-        createInPins(1, 2);
+        createInPins(1);
 
         setToolTipText("NOT");
     }

@@ -15,26 +15,10 @@ public class OrGate extends AbstractGate {
 
         model = new ORGATE("Foo", 2);
         
-        inPins = createInPins(2, 3);
+        inPins = createInPins(2);
 
         setToolTipText("OR");
     }
-
-    /*
-    private Pin createInPinAt(int sections, int sectionSelection){
-        Pin pin = new Pin(true);
-
-        Dimension dims = pin.getSize();
-        Point location = new Point(0, 0);
-        double heightSection = (getBounds().getHeight()/sections) * sectionSelection;
-        
-        location.y = (int)(heightSection - (dims.getHeight()/2));
-
-        attachPin(pin, location);
-
-        return pin;
-    }
-    */
 
     @Override
     protected void paintComponent(Graphics g) {
