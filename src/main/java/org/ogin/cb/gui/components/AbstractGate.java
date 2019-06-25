@@ -6,6 +6,10 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragSource;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 
@@ -13,12 +17,14 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.border.Border;
 
+import org.ogin.cb.gui.dnd.PinSelection;
+
 public abstract class AbstractGate extends JComponent {
     private static final long serialVersionUID = -2171942032839935522L;
 
     private static final Border DEFAULT_BORDER = BorderFactory.createEtchedBorder();
     private static final Border FOCUSED_BORDER = BorderFactory.createEtchedBorder(Color.blue, Color.blue);
-    
+
     protected String name;
     protected boolean movable;
 
@@ -39,9 +45,9 @@ public abstract class AbstractGate extends JComponent {
         setPreferredSize(new Dimension(50, 50));
         setMinimumSize(getPreferredSize());
         setSize(getPreferredSize());
-        //setToolTipText(name);
+        // setToolTipText(name);
         setDefaultBorder();
-        //listen for focus events
+        // listen for focus events
         enableEvents(AWTEvent.FOCUS_EVENT_MASK);
         createOutPin();
     }
@@ -53,35 +59,46 @@ public abstract class AbstractGate extends JComponent {
         outPin = new Pin(false);
 
         Point location = new Point();
-        location.x = getWidth()-outPin.getWidth();
-        location.y = (int)(sectionHeight*(sections-1))-(outPin.getHeight()/2);
+        location.x = getWidth() - outPin.getWidth();
+        location.y = (int) (sectionHeight * (sections - 1)) - (outPin.getHeight() / 2);
 
         attachPin(outPin, location);
+
+        // TODO delme, test code
+        DragSource source = DragSource.getDefaultDragSource();
+        DragGestureListener dgl = new DragGestureListener() {
+
+            @Override
+            public void dragGestureRecognized(DragGestureEvent dge) {
+                dge.startDrag(DragSource.DefaultLinkDrop, new PinSelection(outPin));
+            }
+        };
+        source.createDefaultDragGestureRecognizer(outPin, DnDConstants.ACTION_LINK, dgl);
     }
 
     protected Pin[] createInPins(int count) {
-        return createInPins(count, count+1);
+        return createInPins(count, count + 1);
     }
 
     private Pin[] createInPins(int count, int sections) {
         Pin[] createdPins = new Pin[count];
 
-        //split our height into specified # of sections
+        // split our height into specified # of sections
         double sectionHeight = getBounds().getHeight() / sections;
 
-        //1-based counting
+        // 1-based counting
         int currentSection = 1;
 
-        //we can reuse this; only the Y will change
+        // we can reuse this; only the Y will change
         Point location = new Point(0, 0);
 
-        for(int idx = 0; idx < count; idx++, currentSection++) {
+        for (int idx = 0; idx < count; idx++, currentSection++) {
             Pin pin = new Pin(true);
-            
+
             double sectionStart = sectionHeight * currentSection;
 
-            //subtract half of pin's size so its middle touches our boundary line
-            location.y = (int)(sectionStart - (pin.getHeight()/2));
+            // subtract half of pin's size so its middle touches our boundary line
+            location.y = (int) (sectionStart - (pin.getHeight() / 2));
 
             attachPin(pin, location);
 
@@ -106,7 +123,7 @@ public abstract class AbstractGate extends JComponent {
 
     @Override
     protected void processMouseEvent(MouseEvent e) {
-        if(e.getID() == MouseEvent.MOUSE_CLICKED) {
+        if (e.getID() == MouseEvent.MOUSE_CLICKED) {
             requestFocusInWindow();
             e.consume();
         }
@@ -115,9 +132,9 @@ public abstract class AbstractGate extends JComponent {
 
     @Override
     protected void processFocusEvent(FocusEvent e) {
-        if(e.getID() == FocusEvent.FOCUS_GAINED) {
+        if (e.getID() == FocusEvent.FOCUS_GAINED) {
             setFocusedBorder();
-        } else if(e.getID() == FocusEvent.FOCUS_LOST) {
+        } else if (e.getID() == FocusEvent.FOCUS_LOST) {
             setDefaultBorder();
         }
 
@@ -125,17 +142,18 @@ public abstract class AbstractGate extends JComponent {
     }
 
     /**
-     * Default paint which outputs the "name" field. Not recommended to call from child overrides.
+     * Default paint which outputs the "name" field. Not recommended to call from
+     * child overrides.
      */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        Graphics2D g2 = (Graphics2D)g;
+        Graphics2D g2 = (Graphics2D) g;
         g2.drawString(name, 5, 15);
     }
 
     public boolean isMovable() {
-		return movable;
-	}
+        return movable;
+    }
 }
