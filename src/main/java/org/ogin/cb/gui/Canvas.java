@@ -149,8 +149,8 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     }
 
     private void createDefaultComponents() {
-        attachComponent(new Point(0, 100), new In());
-        attachComponent(new Point(0, 200), new Out());
+        attachComponent(new Point(0, 100), new Power());
+        attachComponent(new Point(0, 200), new In());
         attachComponent(new Point(0, 300), new Ground());
     }
 
