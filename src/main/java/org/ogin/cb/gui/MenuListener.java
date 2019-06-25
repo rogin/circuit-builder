@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 
 import javax.swing.SwingWorker;
 
+import org.apache.commons.lang3.StringUtils;
 import org.ogin.cb.Circuit;
 import org.ogin.cb.CircuitData;
 import org.ogin.cb.CircuitWriter;
@@ -27,11 +28,11 @@ public class MenuListener implements PropertyChangeListener {
     public void propertyChange(PropertyChangeEvent evt) {
         // TODO utilize load / save icons
 
-        if (PropertyNames.Open.name() == evt.getPropertyName()) {
+        if(StringUtils.equals(evt.getPropertyName(), PropertyNames.Open.name())) {
             openFile((File) evt.getNewValue());
-        } else if (PropertyNames.Validate.name() == evt.getPropertyName()) {
+        } else if(StringUtils.equals(evt.getPropertyName(), PropertyNames.Validate.name())) {
             validateFile((File) evt.getNewValue());
-        } else if (PropertyNames.SaveAs.name() == evt.getPropertyName()) {
+        } else if(StringUtils.equals(evt.getPropertyName(), PropertyNames.SaveAs.name())) {
             saveFile((File) evt.getNewValue());
         }
     }

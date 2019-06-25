@@ -16,6 +16,7 @@ import java.beans.PropertyChangeListener;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import org.apache.commons.lang3.StringUtils;
 import org.ogin.cb.CircuitData;
 import org.ogin.cb.gui.components.*;
 
@@ -156,7 +157,7 @@ public class Canvas extends JPanel implements PropertyChangeListener {
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if(evt.getPropertyName() == PropertyNames.New.name()) {
+        if(StringUtils.equals(evt.getPropertyName(), PropertyNames.New.name())) {
             if(acceptsReset()) {
                 clearCanvas();
                 createDefaultComponents();
