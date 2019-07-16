@@ -6,9 +6,7 @@ public class NorGate extends AbstractGate {
     private static final long serialVersionUID = -6463469639591589295L;
 
 	public NorGate() {
-        super("NorGate");
-
-        createInPins(2);
+        super("NorGate", 2);
 
         setToolTipText("NOR");
     }

@@ -4,6 +4,12 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragSource;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -13,12 +19,16 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import org.apache.commons.lang3.StringUtils;
 import org.ogin.cb.CircuitData;
 import org.ogin.cb.gui.components.*;
+import org.ogin.cb.gui.dnd.GateTransferHandler;
+import org.ogin.cb.gui.dnd.PinSelection;
+import org.ogin.cb.gui.dnd.PinTransferHandler;
 
 public class Canvas extends JPanel implements PropertyChangeListener {
 
@@ -30,6 +40,8 @@ public class Canvas extends JPanel implements PropertyChangeListener {
 
     private MouseListener componentMouseListener;
 
+    private PinTransferHandler pinTransferHandler;
+
     public Canvas() {
         init();
     }
@@ -38,15 +50,26 @@ public class Canvas extends JPanel implements PropertyChangeListener {
         // remove layout manager as we move components manually
         setLayout(null);
 
-        //delete component when Delete or BackSpace pressed
+        //delete currently focused component when Delete or BackSpace pressed
         componentKeyListener = new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
                 if(e.getKeyCode() == KeyEvent.VK_DELETE || e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
                     if(e.getComponent() instanceof AbstractGate) {
-                        detachComponent((AbstractGate)e.getComponent());
+                        AbstractGate gate = (AbstractGate)e.getComponent();
+                        if(gate.isMovable()) {
+                            detachComponent(gate);
+                        }
+                    } else if(e.getComponent() instanceof Wire) {
+                        detachComponent((Wire)e.getComponent());
                     }
                 }
+
+                /*
+                if(e.getKeyCode() == KeyEvent.VK_D) {
+                    debugComponents();
+                }
+                */
             }
         };
 
@@ -63,12 +86,31 @@ public class Canvas extends JPanel implements PropertyChangeListener {
         // if we enable grid snapping, ensure new items are created on the boundary
         // mover.setSnapSize(new Dimension(10, 10));
 
-        setTransferHandler(new CustomTransferHandler(this, this::attachComponent));
+        setTransferHandler(new GateTransferHandler(this, this::attachComponent));
+
+        pinTransferHandler = new PinTransferHandler(this::handleWireCreation);
 
         debugFocus();
 
         createDefaultComponents();
     }
+
+    /*
+    private void debugComponents() {
+        System.err.println("Dumping component locations");
+        for(Component c : getComponents()) {
+            System.err.println(c.getClass().getSimpleName() + " location: " + c.getLocation());
+            JComponent x = (JComponent)c;
+            for(Component child : x.getComponents()) {
+                System.err.println("\t" + child.getClass().getSimpleName() + " location: " + child.getLocation());
+                if(child instanceof Pin) {
+                    Pin pin = (Pin) child;
+                    //System.err.println("Found a pin");
+                }
+            }
+        }
+    }
+    */
 
     private void debugFocus() {
         KeyboardFocusManager focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
@@ -91,16 +133,57 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     private void attachComponent(Point point, AbstractGate gate) {
         gate.setLocation(point);
 
-        add(gate);
-
-        gate.addMouseListener(componentMouseListener);
-        gate.addKeyListener(componentKeyListener);
+        addCommonComponent(gate);
 
         if(gate.isMovable()) {
             //this allows us to move the component around the canvas
             componentMover.registerComponent(gate);
+            gate.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentMoved(ComponentEvent e) {
+                    //System.err.println("movement from " + e.getComponent() + " and " + e.getSource());
+                }
+            });
             gate.requestFocusInWindow();
         }
+
+        attachDragForOutPin(gate.getOutPin());
+
+        attachDropFromInPins(gate.getInPins());
+    }
+
+    private void attachComponent(Wire wire) {
+        addCommonComponent(wire);
+        wire.requestFocusInWindow();
+    }
+
+    private void addCommonComponent(JComponent component) {
+        add(component);
+
+        component.addMouseListener(componentMouseListener);
+        component.addKeyListener(componentKeyListener);
+
+        //very important
+        component.repaint();
+    }
+
+    private void attachDropFromInPins(Pin[] inPins) {
+        for(Pin pin : inPins) {
+            pin.setTransferHandler(pinTransferHandler);
+        }
+    }
+
+    private void attachDragForOutPin(Pin pin) {
+        DragSource source = DragSource.getDefaultDragSource();
+        DragGestureListener dragListener = new DragGestureListener() {
+
+            @Override
+            public void dragGestureRecognized(DragGestureEvent dragEvent) {
+                System.out.println("dragGestureRecognized()");
+                dragEvent.startDrag(DragSource.DefaultLinkDrop, new PinSelection(PinTransferHandler.FLAVOR, pin));
+            }
+        };
+        source.createDefaultDragGestureRecognizer(pin, DnDConstants.ACTION_LINK, dragListener);
     }
 
     /**
@@ -108,30 +191,74 @@ public class Canvas extends JPanel implements PropertyChangeListener {
      * @param gate
      */
     private void detachComponent(AbstractGate gate) {
-        gate.removeKeyListener(componentKeyListener);
         componentMover.deregisterComponent(gate);
-        gate.removeMouseListener(componentMouseListener);
 
-        //TODO detach connected wires
+        detachCommonComponent(gate);
 
-        remove(gate);
+        //TODO remove each attached wire
+    }
+
+    private void detachComponent(Wire wire) {
+        detachCommonComponent(wire);
+    }
+
+    private void detachCommonComponent(JComponent c) {
+        c.removeKeyListener(componentKeyListener);
+        c.removeMouseListener(componentMouseListener);
+        
+        remove(c);
 
         //very important
         repaint();
+    }
+
+    private void handleWireCreation(Pin srcOutPin, Pin destInPin) {
+        //do this as the post-serialized pin provided here does not have the
+        //parent container when calling getParent() - something to do with
+        //Swing that can be researched later.
+        Pin locatedOutPin = findPinInComponentTree(srcOutPin);
+
+        if(locatedOutPin != null) {
+            Wire wire = new Wire(srcOutPin, destInPin);
+
+            attachComponent(wire);
+        }
+    }
+
+    private Pin findPinInComponentTree(Pin toFind) {
+        for(Component comp : getComponents()) {
+            //System.err.println("main component: " + c.getClass().getSimpleName());
+            if(comp instanceof JComponent) {
+                for(Component child : ((JComponent)comp).getComponents()) {
+                    //System.err.println("\t" + child.getClass().getSimpleName());
+                    if(child instanceof Pin) {
+                        if(toFind.equals(child)) {
+                            return (Pin)child;
+                        }
+                    }
+                }
+            }
+        }
+
+        System.err.println("Failed to find pin in component tree: " + toFind);
+        
+        return null;
     }
 
     public CircuitData getModelData() {
         CircuitData data = new CircuitData();
 
         for(Component c : getComponents()) {
+            //TODO extract necessary data
             if(c instanceof AbstractGate) {
-                //TODO extract necessary data
                 AbstractGate gate = (AbstractGate)c;
 
                 //avoid builtin types?
                 if(gate instanceof BuiltinComponent) {
                     continue;
                 }
+            } else if(c instanceof Wire) {
+                //append wire data
             }
         }
 
@@ -140,10 +267,11 @@ public class Canvas extends JPanel implements PropertyChangeListener {
 
     private void clearCanvas() {
         for(Component c : getComponents()) {
-            if(c instanceof AbstractGate) {
+            if(c instanceof Wire) {
+                detachComponent((Wire)c);
+            }else if(c instanceof AbstractGate) {
                 detachComponent((AbstractGate)c);
             } else {
-                //TODO implement
                 System.err.println("TODO: implement removal of " + c.getClass().getSimpleName());
             }
         }
@@ -173,17 +301,4 @@ public class Canvas extends JPanel implements PropertyChangeListener {
 
         return response == JOptionPane.YES_OPTION;
     }
-
-    /*
-    @Override
-    protected void paintComponent(Graphics g) {
-        Graphics2D gr = (Graphics2D)g;
-        gr.drawString("Test", 100, 100);
-
-        Shape square = new Rectangle2D.Float(100.0f, 100.0f, 100.0f, 100.0f);
-        Shape circle = new Ellipse2D.Float(100.0f, 100.0f, 100.0f, 100.0f);
-        gr.draw(square);
-        gr.draw(circle);
-    }
-    */
 }

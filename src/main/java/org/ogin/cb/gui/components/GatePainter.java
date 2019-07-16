@@ -2,8 +2,10 @@ package org.ogin.cb.gui.components;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Line2D;
 
 import javax.swing.JComponent;
 
@@ -19,6 +21,7 @@ public final class GatePainter {
         final int leftOffset = 10;
         drawOr(g2, component, false, leftOffset);
 
+        //draw the eXclusive indicator
         GeneralPath path = new GeneralPath();
         path.moveTo(5, 5);
         path.curveTo(5, 5, 20, 20, 5,  component.getHeight()-5);
@@ -135,5 +138,40 @@ public final class GatePainter {
         if(includeNotIndicator) {
             paintNotIndicator(g2, xPoints[2], yPoints[2]);
         }
+	}
+
+	public static void paintNot(Graphics g, JComponent component) {
+        Graphics2D g2 = (Graphics2D)g;
+
+        Rectangle bounds = component.getBounds();
+        
+        //three tips of triangle
+        Point top = new Point(5, 5);
+        Point right = new Point(bounds.width -5, bounds.height / 2);
+        Point bottom = new Point(5, bounds.height-5);
+        
+        g2.drawLine((int)top.getX(), (int)top.getY(), (int)right.getX(), (int)right.getY());
+        g2.draw(new Line2D.Double(top, right));
+        g2.draw(new Line2D.Double(right, bottom));
+        g2.draw(new Line2D.Double(bottom, top));
+
+        paintNotIndicator(g2, (int)right.getX(), (int)right.getY());
+        //Shape round = new RoundRectangle2D.Float((int)right.getX()-3, (int)right.getY()-3, 6, 6, 5, 25);
+        //g2.draw(round);
+
+        /*
+        //we can also draw a path
+        int xPoints[] = {5, dim.width-5, 5};
+        int yPoints[] = {5, dim.height/2, dim.height-5};
+
+        GeneralPath triangle = new GeneralPath();
+
+        triangle.moveTo(xPoints[0], yPoints[0]);
+        for (int i = 1; i < xPoints.length; i++) {
+            triangle.lineTo(xPoints[i], yPoints[i]);
+        }
+        triangle.closePath();
+        g2.draw(triangle);
+        */
 	}
 }
