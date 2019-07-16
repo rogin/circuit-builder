@@ -21,6 +21,7 @@ public final class GatePainter {
         final int leftOffset = 10;
         drawOr(g2, component, false, leftOffset);
 
+        //draw the eXclusive indicator
         GeneralPath path = new GeneralPath();
         path.moveTo(5, 5);
         path.curveTo(5, 5, 20, 20, 5,  component.getHeight()-5);
@@ -150,19 +151,18 @@ public final class GatePainter {
         Point bottom = new Point(5, bounds.height-5);
         
         g2.drawLine((int)top.getX(), (int)top.getY(), (int)right.getX(), (int)right.getY());
-        g2.draw(new Line2D.Float(top, right));
-        g2.draw(new Line2D.Float(right, bottom));
-        g2.draw(new Line2D.Float(bottom, top));
+        g2.draw(new Line2D.Double(top, right));
+        g2.draw(new Line2D.Double(right, bottom));
+        g2.draw(new Line2D.Double(bottom, top));
 
-        //the "NOT" circle
-        g2.drawOval((int)right.getX()-3, (int)right.getY()-3, 6, 6);
+        paintNotIndicator(g2, (int)right.getX(), (int)right.getY());
         //Shape round = new RoundRectangle2D.Float((int)right.getX()-3, (int)right.getY()-3, 6, 6, 5, 25);
         //g2.draw(round);
 
         /*
         //we can also draw a path
-        int xPoints[] = {5, bounds.width-5, 5};
-        int yPoints[] = {5, bounds.height/2, bounds.height-5};
+        int xPoints[] = {5, dim.width-5, 5};
+        int yPoints[] = {5, dim.height/2, dim.height-5};
 
         GeneralPath triangle = new GeneralPath();
 

@@ -1,4 +1,4 @@
-package org.ogin.cb.gui;
+package org.ogin.cb.gui.dnd;
 
 import java.awt.Component;
 import java.awt.Point;
@@ -11,14 +11,17 @@ import javax.swing.TransferHandler;
 
 import org.ogin.cb.gui.components.AbstractGate;
 
-public class CustomTransferHandler extends TransferHandler {
+/**
+ * Handles gate transfers from the drawer to the canvas.
+ */
+public class GateTransferHandler extends TransferHandler {
 
     private static final long serialVersionUID = 8909797536899451637L;
 
     private Component component;
     private BiConsumer<Point, AbstractGate> callback;
 
-    public CustomTransferHandler(Component component, BiConsumer<Point, AbstractGate> callback) {
+    public GateTransferHandler(Component component, BiConsumer<Point, AbstractGate> callback) {
         this.component = component;
         this.callback = callback;
     }
@@ -63,7 +66,7 @@ public class CustomTransferHandler extends TransferHandler {
         try {
             data = (String) info.getTransferable().getTransferData(DataFlavor.stringFlavor);
         } catch (UnsupportedFlavorException | IOException e) {
-            //consider logging
+            e.printStackTrace();
             return false;
         }
 
@@ -72,10 +75,11 @@ public class CustomTransferHandler extends TransferHandler {
 
             if(gate != null) {
                 callback.accept(info.getDropLocation().getDropPoint(), gate);
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     private AbstractGate instantiateGate(String data) {

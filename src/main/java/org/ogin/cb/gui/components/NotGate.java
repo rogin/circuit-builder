@@ -6,9 +6,7 @@ public class NotGate extends AbstractGate {
     private static final long serialVersionUID = -6463469639591589295L;
 
 	public NotGate() {
-        super("NotGate");
-
-        createInPins(1);
+        super("NotGate", 1);
 
         setToolTipText("NOT");
     }
