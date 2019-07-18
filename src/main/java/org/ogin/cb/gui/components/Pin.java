@@ -7,26 +7,28 @@ import java.awt.event.ComponentListener;
 
 import javax.swing.JComponent;
 
+import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public class Pin extends JComponent {
     private static final long serialVersionUID = 2800439609879647896L;
+
+	public static final Color DEFAULT_BACKGROUND_COLOR = Color.BLACK;
     
     private boolean isIn;
     private int number;
-    /* required as getParent() on a de-serialized pin returns null; aggravating */
-    private AbstractGate parentGate;
     
-    public Pin(boolean isIn, int number, AbstractGate parent) {
+    public Pin(boolean isIn, int number) {
         this.isIn = isIn;
         this.number = number;
-        this.parentGate = parent;
         setPreferredSize(new Dimension(10, 10));
         setMinimumSize(getPreferredSize());
         setSize(getPreferredSize());
-        setBackground(Color.BLACK);
+        setBackground(DEFAULT_BACKGROUND_COLOR);
         setOpaque(true);
+        //we need something that will make our components unique for lookups
+        setName(Long.toString(RandomUtils.nextLong()));
     }
 
     public boolean isIn() {
@@ -48,7 +50,7 @@ public class Pin extends JComponent {
      * @param listener
      */
     public void addMoveListener(ComponentListener listener) {
-        parentGate.addComponentListener(listener);
+        ((AbstractGate)getParent()).addComponentListener(listener);
     }
 
     /**
@@ -56,7 +58,7 @@ public class Pin extends JComponent {
      * @param listener
      */
     public void removeMoveListener(ComponentListener listener) {
-        parentGate.removeComponentListener(listener);
+        ((AbstractGate)getParent()).removeComponentListener(listener);
     }
 
     @Override
@@ -70,7 +72,7 @@ public class Pin extends JComponent {
         return new EqualsBuilder()
         .append(isIn(), other.isIn())
         .append(getNumber(), other.getNumber())
-        .append(parentGate, other.parentGate)
+        .append(getName(), other.getName())
         .isEquals();
     }
 
@@ -79,12 +81,12 @@ public class Pin extends JComponent {
         return new HashCodeBuilder()
         .append(isIn())
         .append(getNumber())
-        .append(parentGate)
+        .append(getName())
         .toHashCode();
     }
 
     @Override
     public String toString() {
-        return String.format("%s[%s,%s,%d]", getClass().getSimpleName(), parentGate.getName(), isIn() ? "IN": "OUT", getNumber());
+        return String.format("%s[%s,%s,%d]", getClass().getSimpleName(), isIn() ? "IN": "OUT", getNumber(), getName());
     }
 }

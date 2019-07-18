@@ -10,26 +10,29 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 
-import javax.swing.BorderFactory;
 import javax.swing.JComponent;
-import javax.swing.border.Border;
+
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public class Wire extends JComponent {
 
     private static final long serialVersionUID = -8784359443576588198L;
     
-    private static final Border DEFAULT_BORDER = BorderFactory.createEmptyBorder();
-    private static final Border FOCUSED_BORDER = BorderFactory.createEtchedBorder(Color.blue, Color.blue);
+    private static final Color DEFAULT_LINE_COLOR = Color.BLACK;
+    private static final Color FOCUSED_LINE_COLOR = Color.BLUE;
 
 	private Pin out;
     private Pin in;
     private boolean drawAsIncline;
+    private Color lineColor;
+    private ComponentAdapter moveListener;
 
     public Wire(Pin outPin, Pin inPin) {
         this.out = outPin;
         this.in = inPin;
         calculateBounds();
-        setDefaultBorder();
+        setDefaultLineColor();
         // listen for focus events
         enableEvents(AWTEvent.FOCUS_EVENT_MASK);
         attachMovementListener();
@@ -37,15 +40,15 @@ public class Wire extends JComponent {
 
     private void attachMovementListener() {
         //listen for movement actions on the pins
-        ComponentAdapter listener = new ComponentAdapter() {
+        moveListener = new ComponentAdapter() {
             @Override
             public void componentMoved(ComponentEvent e) {
                 calculateBounds();
                 repaint();
             }
         };
-        out.addMoveListener(listener);
-        in.addMoveListener(listener);
+        out.addMoveListener(moveListener);
+        in.addMoveListener(moveListener);
     }
 
     private void calculateBounds() {
@@ -94,12 +97,12 @@ public class Wire extends JComponent {
         return (outBounds.x < inBounds.x && outBounds.y > inBounds.y) || (outBounds.x > inBounds.x && outBounds.y < inBounds.y);
     }
     
-    private void setDefaultBorder() {
-        setBorder(DEFAULT_BORDER);
+    private void setDefaultLineColor() {
+        lineColor = DEFAULT_LINE_COLOR;
     }
 
-    private void setFocusedBorder() {
-        setBorder(FOCUSED_BORDER);
+    private void setFocusedLineColor() {
+        lineColor = FOCUSED_LINE_COLOR;
     }
 
     @Override
@@ -114,9 +117,11 @@ public class Wire extends JComponent {
     @Override
     protected void processFocusEvent(FocusEvent e) {
         if (e.getID() == FocusEvent.FOCUS_GAINED) {
-            setFocusedBorder();
+            setFocusedLineColor();
+            repaint();
         } else if (e.getID() == FocusEvent.FOCUS_LOST) {
-            setDefaultBorder();
+            setDefaultLineColor();
+            repaint();
         }
 
         super.processFocusEvent(e);
@@ -124,7 +129,7 @@ public class Wire extends JComponent {
 
     @Override
     protected void paintComponent(Graphics g) {
-        g.setColor(Color.black);
+        g.setColor(lineColor);
 
         Rectangle bounds = getBounds();
 
@@ -136,4 +141,39 @@ public class Wire extends JComponent {
             g.drawLine(0, 0, bounds.width, bounds.height);
         }
     }
+
+    public Pin getOutPin() {
+		return out;
+	}
+
+	public Pin getInPin() {
+		return in;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(!(obj instanceof Wire)) {
+            return false;
+        }
+
+        Wire other = (Wire)obj;
+
+        return new EqualsBuilder()
+        .append(getOutPin(), other.getOutPin())
+        .append(getInPin(), other.getInPin())
+        .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+        .append(getOutPin())
+        .append(getInPin())
+        .toHashCode();
+    }
+
+	public void removeListeners() {
+        out.removeMoveListener(moveListener);
+        in.removeMoveListener(moveListener);
+	}
 }

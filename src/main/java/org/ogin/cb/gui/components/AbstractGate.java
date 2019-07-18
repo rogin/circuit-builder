@@ -64,7 +64,7 @@ public abstract class AbstractGate extends JComponent {
         final int sections = 3;
         int sectionHeight = getHeight() / sections;
 
-        outPin = new Pin(false, 1, this);
+        outPin = new Pin(false, 1);
 
         Point location = new Point();
         location.x = getWidth() - outPin.getWidth();
@@ -90,7 +90,7 @@ public abstract class AbstractGate extends JComponent {
         Point location = new Point(0, 0);
 
         for (int idx = 0; idx < count; idx++, currentSection++) {
-            Pin pin = new Pin(true, idx+1, this);
+            Pin pin = new Pin(true, idx+1);
 
             int sectionStart = sectionHeight * currentSection;
 
