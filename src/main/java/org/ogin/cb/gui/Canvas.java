@@ -3,7 +3,6 @@ package org.ogin.cb.gui;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
-import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DragGestureEvent;
@@ -27,9 +26,9 @@ import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.ogin.cb.CircuitData;
 import org.ogin.cb.gui.components.*;
 import org.ogin.cb.gui.dnd.GateTransferHandler;
 import org.ogin.cb.gui.dnd.PinDragSourceListener;
@@ -52,11 +51,12 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     private PinTransferHandler pinTransferHandler;
     private PinDragSourceListener pinDragSourceListener;
 
-    public Canvas() {
-        init();
-    }
-
-    private void init() {
+    /**
+     * Initializes the Canvas and its default components. Object instantiations
+     * must call this or its implementation is undefined. You may want to add
+     * listeners before calling this, or else certain actions will be missed.
+     */
+    public void init() {
         // remove layout manager as we move components manually
         setLayout(null);
 
@@ -74,8 +74,6 @@ public class Canvas extends JPanel implements PropertyChangeListener {
                         detachComponent((Wire) e.getComponent());
                     }
                 }
-
-                if(e.getKeyCode() == KeyEvent.VK_D) { debugComponents(); }
             }
         };
 
@@ -97,40 +95,7 @@ public class Canvas extends JPanel implements PropertyChangeListener {
         pinTransferHandler = new PinTransferHandler(this::handleWireCreation);
         pinDragSourceListener = new PinDragSourceListener();
 
-        debugFocus();
-
         createDefaultComponents();
-    }
-
-     private void debugComponents() {
-        System.err.println("Dumping component locations");
-        for(Component c : getComponents()) {
-            System.err.println(c.getClass().getSimpleName() + " location: " + c.getLocation()); JComponent x = (JComponent)c;
-            for(Component child : x.getComponents()) {
-                System.err.println("\t" + child.getClass().getSimpleName() + " location: " + child.getLocation());
-                //if(child instanceof Pin) {
-                    //Pin pin = (Pin) child;
-                    //System.err.println("Found a pin");
-                //}
-            }
-        }
-    }
-    
-
-    private void debugFocus() {
-        KeyboardFocusManager focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-
-        focusManager.addPropertyChangeListener(new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent e) {
-                String properties = e.getPropertyName();
-                if (("focusOwner".equals(properties)) && (e.getNewValue() != null)) {
-                    Component component = (Component) e.getNewValue();
-                    // String name = component.getName();
-
-                    System.out.println(component.getClass().getSimpleName() + " took focus");
-                }
-            }
-        });
     }
 
     private void attachComponent(Point point, AbstractGate gate) {
@@ -144,14 +109,14 @@ public class Canvas extends JPanel implements PropertyChangeListener {
             gate.requestFocusInWindow();
         }
 
-        configureDragSource(gate.getOutPin());
+        configureDragSources(gate.getOutPins());
 
         assignTransferHandler(gate.getInPins());
     }
 
     private void attachComponent(Wire wire) {
         addCommonComponent(wire, false);
-        //wire.requestFocusInWindow();
+        // wire.requestFocusInWindow();
     }
 
     private void addCommonComponent(JComponent component, boolean randomizeName) {
@@ -160,8 +125,8 @@ public class Canvas extends JPanel implements PropertyChangeListener {
         component.addMouseListener(componentMouseListener);
         component.addKeyListener(componentKeyListener);
 
-        if(randomizeName) {
-            //change the name to avoid lookup errors
+        if (randomizeName) {
+            // change the name to avoid lookup errors
             component.setName(component.getName() + Long.toString(RandomUtils.nextLong()));
         }
 
@@ -170,48 +135,51 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     }
 
     private void assignTransferHandler(Pin[] inPins) {
-        for(Pin pin : inPins) {
+        for (Pin pin : inPins) {
             pin.setTransferHandler(pinTransferHandler);
         }
     }
 
-    private void configureDragSource(Pin outPin) {
-        DragSource source = DragSource.getDefaultDragSource();
-        source.addDragSourceListener(pinDragSourceListener);
-        source.addDragSourceListener(new DragSourceAdapter() {
-            @Override
-            public void dragDropEnd(DragSourceDropEvent event) {
-                configureInPinsAfterDragEvent((Pin)event.getDragSourceContext().getComponent());
-            }
-        });
-        DragGestureListener dragListener = new DragGestureListener() {
+    private void configureDragSources(Pin[] outPins) {
+        for(Pin outPin : outPins) {
+            DragSource source = new DragSource();
 
-            @Override
-            public void dragGestureRecognized(DragGestureEvent dragEvent) {
-                prepareInPinBackgroundsForDragEvent((Pin)dragEvent.getComponent());
-                dragEvent.startDrag(DragSource.DefaultLinkDrop, new PinSelection(PinTransferHandler.FLAVOR, outPin));
-            }
-        };
-        source.createDefaultDragGestureRecognizer(outPin, DnDConstants.ACTION_LINK, dragListener);
+            source.addDragSourceListener(pinDragSourceListener);
+            source.addDragSourceListener(new DragSourceAdapter() {
+                @Override
+                public void dragDropEnd(DragSourceDropEvent event) {
+                    configureInPinsAfterDragEvent((Pin) event.getDragSourceContext().getComponent());
+                }
+            });
+            DragGestureListener dragListener = new DragGestureListener() {
+
+                @Override
+                public void dragGestureRecognized(DragGestureEvent dragEvent) {
+                    prepareInPinBackgroundsForDragEvent((Pin) dragEvent.getComponent());
+                    dragEvent.startDrag(DragSource.DefaultLinkDrop, new PinSelection(PinTransferHandler.FLAVOR, outPin));
+                }
+            };
+            source.createDefaultDragGestureRecognizer(outPin, DnDConstants.ACTION_LINK, dragListener);
+        }
     }
 
     private void configureInPinsAfterDragEvent(Pin outPinEventOriginator) {
-        for(Pin pin : getInPins()) {
+        for (Pin pin : getInPins()) {
             pin.setBackground(Pin.DEFAULT_BACKGROUND_COLOR);
         }
 
         // all IN pins on the same gate as the OUT drag originator were marked
         // unavailable, so review and reset those that should be available.
-        for(Pin pin : getGateOwningOutPin(outPinEventOriginator).getInPins()) {
-            if(!isWired(pin)) {
+        for (Pin pin : getGateOwningOutPin(outPinEventOriginator).getInPins()) {
+            if (!isWired(pin)) {
                 markInPinAvailable(pin);
             }
         }
     }
 
     private boolean isWired(Pin inPin) {
-        for(Wire wire : getWires()) {
-            if(wire.getInPin().equals(inPin)) {
+        for (Wire wire : getWires()) {
+            if (wire.getInPin().equals(inPin)) {
                 return true;
             }
         }
@@ -220,12 +188,13 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     }
 
     private void prepareInPinBackgroundsForDragEvent(Pin outPinEventOriginator) {
-        // all IN pins on the same gate as the OUT drag originator need to be unavailable
-        for(Pin pin : getGateOwningOutPin(outPinEventOriginator).getInPins()) {
+        // all IN pins on the same gate as the OUT drag originator need to be
+        // unavailable
+        for (Pin pin : getGateOwningOutPin(outPinEventOriginator).getInPins()) {
             markInPinUnavailable(pin);
         }
 
-        for(Pin pin : getInPins()) {
+        for (Pin pin : getInPins()) {
             Color newBackground = pin.getDropTarget().isActive() ? PIN_COLOR_VALID_DROP : PIN_COLOR_INVALID_DROP;
             pin.setBackground(newBackground);
         }
@@ -234,9 +203,9 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     private List<Pin> getInPins() {
         List<Pin> inPins = new ArrayList<>();
 
-        for(Component c : getComponents()) {
-            if(c instanceof AbstractGate) {
-                AbstractGate gate = (AbstractGate)c;
+        for (Component c : getComponents()) {
+            if (c instanceof AbstractGate) {
+                AbstractGate gate = (AbstractGate) c;
                 inPins.addAll(Arrays.asList(gate.getInPins()));
             }
         }
@@ -245,22 +214,23 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     }
 
     private AbstractGate getGateOwningOutPin(Pin outPinToFind) {
-        for(Component c : getComponents()) {
-            if(c instanceof AbstractGate) {
-                AbstractGate gate = (AbstractGate)c;
-                if(outPinToFind.equals(gate.getOutPin())) {
+        for (Component c : getComponents()) {
+            if (c instanceof AbstractGate) {
+                AbstractGate gate = (AbstractGate) c;
+                if(ArrayUtils.contains(gate.getOutPins(), outPinToFind)) {
                     return gate;
                 }
             }
         }
 
         System.err.println("Failed to find gate from out pin in component tree: " + outPinToFind);
-        
+
         return null;
     }
 
     /**
      * Remove the component from the canvas.
+     * 
      * @param gate
      */
     private void detachComponent(AbstractGate gate) {
@@ -269,8 +239,8 @@ public class Canvas extends JPanel implements PropertyChangeListener {
         detachCommonComponent(gate);
 
         List<Wire> attachedWires = getWiresAttachedToGate(gate);
-        
-        for(Wire wire : attachedWires) {
+
+        for (Wire wire : attachedWires) {
             detachComponent(wire);
         }
     }
@@ -278,16 +248,12 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     private List<Wire> getWiresAttachedToGate(AbstractGate gate) {
         List<Wire> attachedWires = new ArrayList<>();
 
-        for(Wire wire : getWires()) {
-            for(Pin pin : gate.getInPins()) {
-                if(pin.equals(wire.getInPin())) {
-                    attachedWires.add(wire);
-                    //continue to the next wire
-                    continue;
-                }
+        for (Wire wire : getWires()) {
+            if(ArrayUtils.contains(gate.getInPins(), wire.getInPin())) {
+                attachedWires.add(wire);
             }
 
-            if(gate.getOutPin().equals(wire.getOutPin())) {
+            if(ArrayUtils.contains(gate.getOutPins(), wire.getOutPin())) {
                 attachedWires.add(wire);
             }
         }
@@ -298,9 +264,9 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     private List<Wire> getWires() {
         List<Wire> wires = new ArrayList<>();
 
-        for(Component c : getComponents()) {
-            if(c instanceof Wire) {
-                wires.add((Wire)c);
+        for (Component c : getComponents()) {
+            if (c instanceof Wire) {
+                wires.add((Wire) c);
             }
         }
 
@@ -318,20 +284,20 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     private void detachCommonComponent(JComponent c) {
         c.removeKeyListener(componentKeyListener);
         c.removeMouseListener(componentMouseListener);
-        
+
         remove(c);
 
-        //very important
+        // very important
         repaint();
     }
 
     private void handleWireCreation(Pin srcOutPin, Pin destInPin) {
-        //do this as the post-serialized pin provided here does not have the
-        //parent container when calling getParent() - something to do with
-        //Swing that can be researched later.
+        // do this as the post-serialized pin provided here does not have the
+        // parent container when calling getParent() - something to do with
+        // Swing that can be researched later.
         Pin locatedOutPin = findOutPin(srcOutPin);
 
-        if(locatedOutPin != null) {
+        if (locatedOutPin != null) {
             Wire wire = new Wire(locatedOutPin, destInPin);
 
             attachComponent(wire);
@@ -340,46 +306,27 @@ public class Canvas extends JPanel implements PropertyChangeListener {
     }
 
     private Pin findOutPin(Pin outPinToFind) {
-        for(Component c : getComponents()) {
-            if(c instanceof AbstractGate) {
-                AbstractGate gate = (AbstractGate)c;
-                if(outPinToFind.equals(gate.getOutPin())) {
-                    return gate.getOutPin();
+        for (Component c : getComponents()) {
+            if (c instanceof AbstractGate) {
+                AbstractGate gate = (AbstractGate) c;
+                int index = ArrayUtils.indexOf(gate.getOutPins(), outPinToFind);
+                if(index >= 0) {
+                    return gate.getOutPins()[index];
                 }
             }
         }
 
-        System.err.println("Failed to find pin in component tree: " + outPinToFind);
-        
+        System.err.println("Failed to find OUT pin in component tree: " + outPinToFind);
+
         return null;
     }
 
     public void markInPinUnavailable(Pin pin) {
         pin.getDropTarget().setActive(false);
     }
-    
+
     public void markInPinAvailable(Pin pin) {
         pin.getDropTarget().setActive(true);
-    }
-
-    public CircuitData getModelData() {
-        CircuitData data = new CircuitData();
-
-        for(Component c : getComponents()) {
-            //TODO extract necessary data
-            if(c instanceof AbstractGate) {
-                AbstractGate gate = (AbstractGate)c;
-
-                //avoid builtin types?
-                if(gate instanceof BuiltinComponent) {
-                    continue;
-                }
-            } else if(c instanceof Wire) {
-                //append wire data
-            }
-        }
-
-        return data;
     }
 
     private void clearCanvas() {
@@ -396,8 +343,9 @@ public class Canvas extends JPanel implements PropertyChangeListener {
 
     private void createDefaultComponents() {
         attachComponent(new Point(0, 100), new Power());
-        attachComponent(new Point(0, 200), new In());
+        attachComponent(new Point(0, 200), new In(3));
         attachComponent(new Point(0, 300), new Ground());
+        attachComponent(new Point(650, 200), new Out(3));
     }
 
     @Override

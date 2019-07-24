@@ -12,6 +12,13 @@ public class CircuitData {
     private List<CONNECTION> connections = Collections.emptyList();
     private List<ALIAS> aliases = Collections.emptyList();
 
+    public CircuitData() {}
+
+    public CircuitData(List<COMPONENT> components, List<CONNECTION> connections) {
+        setComponents(components);
+        setConnections(connections);
+    }
+
     /**
      * @return the components
      */

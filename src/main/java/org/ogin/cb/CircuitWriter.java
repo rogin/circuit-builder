@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.ogin.cb.models.ALIAS;
 import org.ogin.cb.models.COMPONENT;
 import org.ogin.cb.models.CONNECTION;
@@ -11,6 +12,8 @@ import org.ogin.cb.models.NODE;
 import org.ogin.cb.models.TokenType;
 
 public class CircuitWriter {
+    private static final TokenType[] BUILT_IN_COMPONENTS = {TokenType.GROUND, TokenType.IN, TokenType.OUT, TokenType.POWER};
+
     private PrintStream out;
     private CircuitData data;
 
@@ -37,6 +40,9 @@ public class CircuitWriter {
         out.println(TokenType.COMPONENTS);
 
         for(COMPONENT c : data.getComponents()) {
+            //avoid writing built-in components
+            if(isBuiltInComponent(c)) continue;
+
             //use default # of pins
             if(c.getNumberOfPins() > 2) {
                 out.printf("%s *%s %s", c.GetType(), c.getNumberOfPins(), c.getIdentifier());
@@ -47,6 +53,10 @@ public class CircuitWriter {
         }
 
         out.println();
+    }
+
+    private boolean isBuiltInComponent(COMPONENT c) {
+        return ArrayUtils.contains(BUILT_IN_COMPONENTS, c.GetType());
     }
 
     private void writeAliases() {

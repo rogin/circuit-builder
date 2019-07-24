@@ -9,6 +9,7 @@ public class MainFrame extends JFrame implements DialogProvider {
     private static final long serialVersionUID = 7546234560603703591L;
 
     private MainMenuBar menuBar;
+    private CircuitExporter exporter;
     private Canvas canvas;
 
     public MainFrame() {
@@ -29,7 +30,13 @@ public class MainFrame extends JFrame implements DialogProvider {
     private void createContentPanel() {
         JSplitPane splitPane = new JSplitPane();
         splitPane.setLeftComponent(new Drawer());
+        
+        exporter = new CircuitExporter();
+        
         canvas = new Canvas();
+        canvas.addContainerListener(exporter);
+        canvas.init();
+
         splitPane.setRightComponent(canvas);
         setContentPane(splitPane);
     }
@@ -40,7 +47,7 @@ public class MainFrame extends JFrame implements DialogProvider {
     }
 
     private void attachPropertyChangeListeners() {
-        MenuListener menuListener = new MenuListener(this, canvas::getModelData);
+        MenuListener menuListener = new MenuListener(this, exporter::getModelData);
         menuBar.getNewFileAction().addPropertyChangeListener(canvas);
         menuBar.getOpenFileAction().addPropertyChangeListener(menuListener);
         menuBar.getSaveAsFileAction().addPropertyChangeListener(menuListener);

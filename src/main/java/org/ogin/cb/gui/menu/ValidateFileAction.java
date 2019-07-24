@@ -40,9 +40,8 @@ public class ValidateFileAction extends AbstractAction {
         int returnVal = fileChooser.showOpenDialog(parent);
 
         if(returnVal == JFileChooser.APPROVE_OPTION) {
-            File oldFile = selectedFile;
             selectedFile = fileChooser.getSelectedFile();
-            pcs.firePropertyChange(PropertyNames.Validate.name(), oldFile, selectedFile);
+            pcs.firePropertyChange(PropertyNames.Validate.name(), null, selectedFile);
         }
     }
 

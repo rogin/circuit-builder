@@ -47,9 +47,8 @@ public class SaveAsFileAction extends AbstractAction {
             File fileSelectionFromDialog = getWithExtension(fileChooser.getSelectedFile());
             //prompt to overwrite if existing file
             if(acceptsOverwrite(fileSelectionFromDialog)) {
-                File oldFile = selectedFile;
                 selectedFile = fileSelectionFromDialog;
-                pcs.firePropertyChange(PropertyNames.SaveAs.name(), oldFile, selectedFile);   
+                pcs.firePropertyChange(PropertyNames.SaveAs.name(), null, selectedFile);   
             }
         }
     }

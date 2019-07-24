@@ -13,9 +13,10 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.border.Border;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.ogin.cb.models.COMPONENT;
+import org.ogin.cb.models.TokenType;
 
 public abstract class AbstractGate extends JComponent {
     private static final long serialVersionUID = -2171942032839935522L;
@@ -24,9 +25,10 @@ public abstract class AbstractGate extends JComponent {
     private static final Border FOCUSED_BORDER = BorderFactory.createEtchedBorder(Color.blue, Color.blue);
 
     protected boolean movable;
+    protected TokenType type = TokenType.UNKNOWN;
 
     protected Pin[] inPins;
-    protected Pin outPin;
+    protected Pin[] outPins;
 
     public AbstractGate(String name) {
         this(name, true);
@@ -36,20 +38,22 @@ public abstract class AbstractGate extends JComponent {
         this(name, movable, 0);
     }
 
-    public AbstractGate(String name, int inPinCount) {
-        this(name, true, inPinCount);
+    public AbstractGate(String name, int inPins) {
+        this(name, true, inPins);
     }
 
-    public AbstractGate(String name, boolean movable, int inPinCount) {
+    public AbstractGate(String name, boolean movable, int inPins) {
+        this(name, true, inPins, 1);
+    }
+
+    public AbstractGate(String name, boolean movable, int inPins, int outPins) {
         setName(name);
         this.movable = movable;
 
-        init();
-
-        inPins = createInPins(inPinCount);
+        init(inPins, outPins);
     }
 
-    private void init() {
+    private void init(int inPinCount, int outPinCount) {
         setPreferredSize(new Dimension(50, 50));
         setMinimumSize(getPreferredSize());
         setSize(getPreferredSize());
@@ -57,52 +61,61 @@ public abstract class AbstractGate extends JComponent {
         setDefaultBorder();
         // listen for focus events
         enableEvents(AWTEvent.FOCUS_EVENT_MASK);
-        createOutPin();
+        createInPins(inPinCount);
+        createOutPins(outPinCount);
     }
 
-    private void createOutPin() {
-        final int sections = 3;
-        int sectionHeight = getHeight() / sections;
+    public abstract COMPONENT asComponent();
 
-        outPin = new Pin(false, 1);
-
-        Point location = new Point();
-        location.x = getWidth() - outPin.getWidth();
-        location.y = (sectionHeight * (sections - 1)) - (outPin.getHeight() / 2);
-
-        attachPin(outPin, location);
-    }
-
-    protected Pin[] createInPins(int count) {
-        return createInPins(count, count + 1);
-    }
-
-    private Pin[] createInPins(int count, int sections) {
-        Pin[] createdPins = new Pin[count];
+    private void createOutPins(int count) {
+        outPins = new Pin[count];
 
         // split our height into specified # of sections
-        int sectionHeight = getHeight() / sections;
+        int sectionHeight = getHeight() / (count + 1);
 
-        // 1-based counting
-        int currentSection = 1;
+        final int IN_PIN_COUNT = getInPins().length;
+
+        Point location = new Point(0, 0);
+
+        for (int idx = 0; idx < count; idx++) {
+            Pin pin = new Pin(false, idx+1+IN_PIN_COUNT);
+
+            // 1-based counting
+            int sectionStart = sectionHeight * (idx+1);
+
+            location.x = getWidth() - pin.getWidth();
+            
+            // subtract half of pin's size so its middle touches our boundary line
+            location.y = sectionStart - (pin.getHeight() / 2);
+
+            attachPin(pin, location);
+
+            outPins[idx] = pin;
+        }
+    }
+
+    private void createInPins(int count) {
+        inPins = new Pin[count];
+
+        // split our height into specified # of sections
+        int sectionHeight = getHeight() / (count + 1);
 
         // we can reuse this; only the Y will change
         Point location = new Point(0, 0);
 
-        for (int idx = 0; idx < count; idx++, currentSection++) {
+        for (int idx = 0; idx < count; idx++) {
             Pin pin = new Pin(true, idx+1);
 
-            int sectionStart = sectionHeight * currentSection;
+            // 1-based counting
+            int sectionStart = sectionHeight * (idx+1);
 
             // subtract half of pin's size so its middle touches our boundary line
             location.y = sectionStart - (pin.getHeight() / 2);
 
             attachPin(pin, location);
 
-            createdPins[idx] = pin;
+            inPins[idx] = pin;
         }
-
-        return createdPins;
     }
 
     private void attachPin(Pin pin, Point location) {
@@ -154,13 +167,17 @@ public abstract class AbstractGate extends JComponent {
         return movable;
     }
 
-    public Pin getOutPin() {
-        return outPin;
+    public Pin[] getOutPins() {
+        return outPins;
     }
 
     public Pin[] getInPins() {
         return inPins;
     }
+
+    public TokenType getTokenType() {
+		return type;
+	}
 
     @Override
     public boolean equals(Object obj) {
@@ -173,7 +190,6 @@ public abstract class AbstractGate extends JComponent {
         return new EqualsBuilder()
         .append(isMovable(), other.isMovable())
         .append(getName(), other.getName())
-        .append(ArrayUtils.getLength(getInPins()), ArrayUtils.getLength(other.getInPins()))
         .isEquals();
     }
 
@@ -182,7 +198,6 @@ public abstract class AbstractGate extends JComponent {
         return new HashCodeBuilder()
         .append(isMovable())
         .append(getName())
-        .append(ArrayUtils.getLength(inPins))
         .toHashCode();
     }
 }
