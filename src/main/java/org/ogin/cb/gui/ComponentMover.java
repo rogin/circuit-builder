@@ -42,20 +42,11 @@ public class ComponentMover extends MouseAdapter
 	private boolean autoscrolls;
 	private boolean potentialDrag;
 
-	private int movementCursor;
+	private int movementCursor = Cursor.MOVE_CURSOR;
 	
 	/**
 	 *  Constructor for moving individual components. The components must be
-	 *  regisetered using the registerComponent() method. Defaults to a movement
-	 * cursor of {@link Cursor.MOVE_CURSOR}.
-	 */
-	public ComponentMover() {
-		this(Cursor.MOVE_CURSOR);
-	}
-
-	/**
-	 *  Constructor for moving individual components. The components must be
-	 *  regisetered using the registerComponent() method.
+	 *  registered using the {@link #registerComponent(Component...)} method.
 	 * @param movementCursor {@link Cursor} to display on movement
 	 */
 	public ComponentMover(int movementCursor)

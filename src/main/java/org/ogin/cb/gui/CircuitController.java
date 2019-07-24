@@ -1,14 +1,7 @@
 package org.ogin.cb.gui;
 
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Point;
-import java.awt.dnd.DnDConstants;
-import java.awt.dnd.DragGestureEvent;
-import java.awt.dnd.DragGestureListener;
-import java.awt.dnd.DragSource;
-import java.awt.dnd.DragSourceAdapter;
-import java.awt.dnd.DragSourceDropEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -30,14 +23,10 @@ import org.ogin.cb.gui.components.Out;
 import org.ogin.cb.gui.components.Pin;
 import org.ogin.cb.gui.components.Power;
 import org.ogin.cb.gui.components.Wire;
+import org.ogin.cb.gui.dnd.PinDragProvider;
 import org.ogin.cb.gui.dnd.GateTransferHandler;
-import org.ogin.cb.gui.dnd.PinDragSourceListener;
-import org.ogin.cb.gui.dnd.PinSelection;
-import org.ogin.cb.gui.dnd.PinTransferHandler;
 
 public class CircuitController implements PropertyChangeListener {
-    private static final Color PIN_COLOR_VALID_DROP = Color.GREEN;
-    private static final Color PIN_COLOR_INVALID_DROP = Color.RED;
     
     private CircuitModel model;
     private JComponent canvas;
@@ -49,13 +38,10 @@ public class CircuitController implements PropertyChangeListener {
     private KeyListener componentKeyListener;
 
     /** provides focus to clicked components */
-    private MouseListener componentMouseListener;
+    private MouseListener focusProvider;
 
-    /** provides notifications when a wire is drawn */
-    private PinTransferHandler pinTransferHandler;
-
-    /** toggles cursor during pin drag events */
-    private PinDragSourceListener pinDragSourceListener;
+    /** provides drag-n-drop between pins to create wires */
+    private PinDragProvider pinDragProvider;
 
     public CircuitController(CircuitModel model, JComponent canvas) {
         this.model = model;
@@ -65,8 +51,13 @@ public class CircuitController implements PropertyChangeListener {
 	}
 
 	private void init() {
+        pinDragProvider = new PinDragProvider(model, this::onWireCreated);
+
         //allows the model to be populated by components added to the canvas
         canvas.addContainerListener(model);
+        //ensure listener added after the model so new components are available
+        //when processing DnD events
+        canvas.addContainerListener(pinDragProvider);
 
         // delete currently focused component when Delete or BackSpace pressed
         componentKeyListener = new KeyAdapter() {
@@ -87,10 +78,10 @@ public class CircuitController implements PropertyChangeListener {
         };
 
         // on mouse click, give the component focus
-        componentMouseListener = new MouseAdapter() {
+        focusProvider = new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                e.getComponent().requestFocus();
+            public void mouseClicked(MouseEvent event) {
+                event.getComponent().requestFocus();
             }
         };
 
@@ -98,20 +89,17 @@ public class CircuitController implements PropertyChangeListener {
         // if we enable grid snapping, ensure new items are created on the boundary
         // mover.setSnapSize(new Dimension(10, 10));
 
-        canvas.setTransferHandler(new GateTransferHandler(canvas, this::attachComponent));
-
-        pinTransferHandler = new PinTransferHandler(this::handleWireCreation);
-        pinDragSourceListener = new PinDragSourceListener();
+        canvas.setTransferHandler(new GateTransferHandler(canvas, this::onGateCreation));
 
         createDefaultComponents();
     }
 
     /**
-     * Attach a component onto the canvas at the specified point.
+     * Responds to a new gate being dragged onto the canvas at the specified location.
      * @param point
      * @param gate
      */
-    private void attachComponent(Point point, AbstractGate gate) {
+    private void onGateCreation(Point point, AbstractGate gate) {
         gate.setLocation(point);
 
         addCommonComponent(gate, gate.isMovable());
@@ -121,10 +109,6 @@ public class CircuitController implements PropertyChangeListener {
             gateMover.registerComponent(gate);
             gate.requestFocusInWindow();
         }
-
-        configureDragSources(gate.getOutPins());
-
-        assignTransferHandler(gate.getInPins());
     }
 
     /**
@@ -144,7 +128,7 @@ public class CircuitController implements PropertyChangeListener {
     private void addCommonComponent(JComponent component, boolean randomizeName) {
         canvas.add(component);
 
-        component.addMouseListener(componentMouseListener);
+        component.addMouseListener(focusProvider);
         component.addKeyListener(componentKeyListener);
 
         if (randomizeName) {
@@ -154,62 +138,6 @@ public class CircuitController implements PropertyChangeListener {
 
         // very important
         component.repaint();
-    }
-
-    private void assignTransferHandler(Pin[] inPins) {
-        for (Pin pin : inPins) {
-            pin.setTransferHandler(pinTransferHandler);
-        }
-    }
-
-    private void configureDragSources(Pin[] outPins) {
-        for(Pin outPin : outPins) {
-            DragSource source = new DragSource();
-
-            source.addDragSourceListener(pinDragSourceListener);
-            source.addDragSourceListener(new DragSourceAdapter() {
-                @Override
-                public void dragDropEnd(DragSourceDropEvent event) {
-                    configureInPinsAfterDragEvent((Pin) event.getDragSourceContext().getComponent());
-                }
-            });
-            DragGestureListener dragListener = new DragGestureListener() {
-
-                @Override
-                public void dragGestureRecognized(DragGestureEvent dragEvent) {
-                    prepareInPinBackgroundsForDragEvent((Pin) dragEvent.getComponent());
-                    dragEvent.startDrag(DragSource.DefaultLinkDrop, new PinSelection(PinTransferHandler.PIN_FLAVOR, outPin));
-                }
-            };
-            source.createDefaultDragGestureRecognizer(outPin, DnDConstants.ACTION_LINK, dragListener);
-        }
-    }
-
-    private void configureInPinsAfterDragEvent(Pin outPinEventOriginator) {
-        for (Pin pin : model.getInPins()) {
-            pin.setBackground(Pin.DEFAULT_BACKGROUND_COLOR);
-        }
-
-        // all IN pins on the same gate as the OUT drag originator were marked
-        // unavailable, so review and reset those that should be available.
-        for (Pin pin : model.getGateOwningOutPin(outPinEventOriginator).getInPins()) {
-            if (!model.isWired(pin)) {
-                markInPinAvailable(pin);
-            }
-        }
-    }
-
-    private void prepareInPinBackgroundsForDragEvent(Pin outPinEventOriginator) {
-        // all IN pins on the same gate as the OUT drag originator need to be
-        // unavailable
-        for (Pin pin : model.getGateOwningOutPin(outPinEventOriginator).getInPins()) {
-            markInPinUnavailable(pin);
-        }
-
-        for (Pin pin : model.getInPins()) {
-            Color newBackground = pin.getDropTarget().isActive() ? PIN_COLOR_VALID_DROP : PIN_COLOR_INVALID_DROP;
-            pin.setBackground(newBackground);
-        }
     }
 
     /**
@@ -236,9 +164,6 @@ public class CircuitController implements PropertyChangeListener {
         detachCommonComponent(wire);
 
         wire.removeListeners();
-        // now that a wire is not attached to the IN pin,
-        // allow it to be used as a drop target
-        markInPinAvailable(wire.getInPin());
     }
 
     /**
@@ -247,7 +172,7 @@ public class CircuitController implements PropertyChangeListener {
      */
     private void detachCommonComponent(JComponent component) {
         component.removeKeyListener(componentKeyListener);
-        component.removeMouseListener(componentMouseListener);
+        component.removeMouseListener(focusProvider);
 
         canvas.remove(component);
 
@@ -255,7 +180,12 @@ public class CircuitController implements PropertyChangeListener {
         canvas.repaint();
     }
 
-    private void handleWireCreation(Pin srcOutPin, Pin destInPin) {
+    /**
+     * Responds to a new wire being created between the specified pins.
+     * @param srcOutPin
+     * @param destInPin
+     */
+    private void onWireCreated(Pin srcOutPin, Pin destInPin) {
         // do this as the post-serialized pin provided here does not have the
         // parent container when calling getParent() - something to do with
         // Swing that can be researched later.
@@ -265,16 +195,7 @@ public class CircuitController implements PropertyChangeListener {
             Wire wire = new Wire(locatedOutPin, destInPin);
 
             attachComponent(wire);
-            markInPinUnavailable(destInPin);
         }
-    }
-
-    public void markInPinUnavailable(Pin pin) {
-        pin.getDropTarget().setActive(false);
-    }
-
-    public void markInPinAvailable(Pin pin) {
-        pin.getDropTarget().setActive(true);
     }
 
     private void clearCanvas() {
@@ -288,16 +209,16 @@ public class CircuitController implements PropertyChangeListener {
     }
 
     private void createDefaultComponents() {
-        attachComponent(new Point(0, 100), new Power());
-        attachComponent(new Point(0, 200), new In(3));
-        attachComponent(new Point(0, 300), new Ground());
-        attachComponent(new Point(650, 200), new Out(3));
+        onGateCreation(new Point(0, 100), new Power());
+        onGateCreation(new Point(0, 200), new In(3));
+        onGateCreation(new Point(0, 300), new Ground());
+        onGateCreation(new Point(650, 200), new Out(3));
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
+    public void propertyChange(PropertyChangeEvent event) {
         //if menu option "New" was selected
-        if(StringUtils.equals(evt.getPropertyName(), PropertyNames.New.name())) {
+        if(StringUtils.equals(event.getPropertyName(), PropertyNames.New.name())) {
             //verify the user is OK resetting the canvas
             if(acceptsReset()) {
                 clearCanvas();

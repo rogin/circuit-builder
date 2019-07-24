@@ -14,7 +14,8 @@ import org.ogin.cb.gui.Drawer;
 import org.ogin.cb.gui.components.AbstractGate;
 
 /**
- * Handles gate transfers from the {@link Drawer} to the {@link Canvas}
+ * Handles gate transfers from the {@link Drawer} to the {@link Canvas}.
+ * On successful drop, calls the provided callback.
  */
 public class GateTransferHandler extends TransferHandler {
 
