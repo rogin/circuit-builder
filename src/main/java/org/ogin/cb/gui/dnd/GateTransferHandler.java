@@ -1,5 +1,6 @@
 package org.ogin.cb.gui.dnd;
 
+import java.awt.Canvas;
 import java.awt.Component;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
@@ -9,20 +10,27 @@ import java.util.function.BiConsumer;
 
 import javax.swing.TransferHandler;
 
+import org.ogin.cb.gui.Drawer;
 import org.ogin.cb.gui.components.AbstractGate;
 
 /**
- * Handles gate transfers from the drawer to the canvas.
+ * Handles gate transfers from the {@link Drawer} to the {@link Canvas}
  */
 public class GateTransferHandler extends TransferHandler {
 
     private static final long serialVersionUID = 8909797536899451637L;
 
-    private Component component;
+    private Component target;
     private BiConsumer<Point, AbstractGate> callback;
 
-    public GateTransferHandler(Component component, BiConsumer<Point, AbstractGate> callback) {
-        this.component = component;
+    /**
+     * Constructs a new instance for the specified component with the
+     * callback to be used when a drop occurs.
+     * @param target target component
+     * @param callback callback for when a drop occurs
+     */
+    public GateTransferHandler(Component target, BiConsumer<Point, AbstractGate> callback) {
+        this.target = target;
         this.callback = callback;
     }
 
@@ -49,8 +57,8 @@ public class GateTransferHandler extends TransferHandler {
     private boolean isOverChildComponent(TransferSupport support) {
         Point point = support.getDropLocation().getDropPoint();
 
-        Component compAtLocation = component.getComponentAt(point);
-        return compAtLocation != null && !compAtLocation.equals(component);
+        Component compAtLocation = target.getComponentAt(point);
+        return compAtLocation != null && !compAtLocation.equals(target);
     }
 
     public boolean importData(TransferHandler.TransferSupport info) {

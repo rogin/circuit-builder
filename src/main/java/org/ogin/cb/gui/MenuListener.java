@@ -1,5 +1,6 @@
 package org.ogin.cb.gui;
 
+import java.awt.Container;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -7,6 +8,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
+import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
 import org.apache.commons.lang3.StringUtils;
@@ -16,11 +18,11 @@ import org.ogin.cb.CircuitWriter;
 import org.ogin.cb.parser.SDLException;
 
 public class MenuListener implements PropertyChangeListener {
-    private DialogProvider dialogProvider;
+    private Container container;
     private Supplier<CircuitData> dataSupplier;
 
-    public MenuListener(DialogProvider dialogProvider, Supplier<CircuitData> dataSupplier) {
-        this.dialogProvider = dialogProvider;
+    public MenuListener(Container container, Supplier<CircuitData> dataSupplier) {
+        this.container = container;
         this.dataSupplier = dataSupplier;
     }
 
@@ -46,11 +48,11 @@ public class MenuListener implements PropertyChangeListener {
             success = true;
         } catch (IOException e) {
             e.printStackTrace();
-            dialogProvider.notifyError("Save failed", e.getMessage());
+            notifyError("Save failed", e.getMessage());
         }
 
         if(success) {
-            dialogProvider.notifyInfo("Success", "Data written.");
+            notifyInfo("Success", "Data written.");
         }
     }
 
@@ -74,14 +76,14 @@ public class MenuListener implements PropertyChangeListener {
                 try {
                     data = get();
                 } catch (InterruptedException e) {
-                    dialogProvider.notifyError("Error opening file", "Open operation was interrupted. Please try again.");
+                    notifyError("Error opening file", "Open operation was interrupted. Please try again.");
                 } catch (ExecutionException e) {
                     //TODO show full stack trace
-                    dialogProvider.notifyError("Error opening file", e.getMessage());
+                    notifyError("Error opening file", e.getMessage());
                 }
 
                 if(data != null) {
-                    //complete
+                    notifyInfo("Open file", "The file was read successfully, but the parsing logic is currently not implemented.");
                 }
             }
         };
@@ -108,19 +110,27 @@ public class MenuListener implements PropertyChangeListener {
                 try {
                     data = get();
                 } catch (InterruptedException e) {
-                    dialogProvider.notifyError("Error opening file", "Validation operation was interrupted. Please try again.");
+                    notifyError("Error opening file", "Validation operation was interrupted. Please try again.");
                 } catch (ExecutionException e) {
                     //TODO show full stack trace?
-                    dialogProvider.notifyError("Validation failed", e.getMessage());
+                    notifyError("Validation failed", e.getMessage());
 
                 }
 
                 if(data != null) {
-                    dialogProvider.notifyInfo("Success", "File has been validated");
+                    notifyInfo("Success", "File has been validated");
                 }
             }
         };
 
         worker.run();
+    }
+
+    private void notifyError(String title, String message) {
+        JOptionPane.showMessageDialog(container, message, title, JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void notifyInfo(String title, String message) {
+        JOptionPane.showMessageDialog(container, message, title, JOptionPane.INFORMATION_MESSAGE);
     }
 }

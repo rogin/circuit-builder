@@ -1,15 +1,15 @@
 package org.ogin.cb.gui;
 
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
 
-public class MainFrame extends JFrame implements DialogProvider {
+public class MainFrame extends JFrame {
 
     private static final long serialVersionUID = 7546234560603703591L;
 
     private MainMenuBar menuBar;
-    private CircuitExporter exporter;
+    private CircuitModel model;
+    private CircuitController controller;
     private Canvas canvas;
 
     public MainFrame() {
@@ -30,12 +30,11 @@ public class MainFrame extends JFrame implements DialogProvider {
     private void createContentPanel() {
         JSplitPane splitPane = new JSplitPane();
         splitPane.setLeftComponent(new Drawer());
-        
-        exporter = new CircuitExporter();
-        
+
+        model = new CircuitModel();
         canvas = new Canvas();
-        canvas.addContainerListener(exporter);
-        canvas.init();
+
+        controller = new CircuitController(model, canvas);
 
         splitPane.setRightComponent(canvas);
         setContentPane(splitPane);
@@ -47,20 +46,10 @@ public class MainFrame extends JFrame implements DialogProvider {
     }
 
     private void attachPropertyChangeListeners() {
-        MenuListener menuListener = new MenuListener(this, exporter::getModelData);
-        menuBar.getNewFileAction().addPropertyChangeListener(canvas);
+        MenuListener menuListener = new MenuListener(this, model::getExportData);
+        menuBar.getNewFileAction().addPropertyChangeListener(controller);
         menuBar.getOpenFileAction().addPropertyChangeListener(menuListener);
         menuBar.getSaveAsFileAction().addPropertyChangeListener(menuListener);
         menuBar.getValidateFileAction().addPropertyChangeListener(menuListener);
-    }
-
-    @Override
-    public void notifyError(String title, String message) {
-        JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
-    }
-
-    @Override
-    public void notifyInfo(String title, String message) {
-        JOptionPane.showMessageDialog(this, message, title, JOptionPane.INFORMATION_MESSAGE);
     }
 }

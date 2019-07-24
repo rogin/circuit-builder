@@ -9,10 +9,14 @@ import javax.swing.TransferHandler;
 
 import org.ogin.cb.gui.components.Pin;
 
+/**
+ * Provides Drag-n-Drop support for transferring one {@link Pin} to another.
+ * Once the drop has occurred, the provided callback is sent the data.
+ */
 public class PinTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 5717351146136786091L;
 
-    public static final DataFlavor FLAVOR = new DataFlavor(Pin.class, "Pin");
+    public static final DataFlavor PIN_FLAVOR = new DataFlavor(Pin.class, "Pin");
 
     private BiConsumer<Pin, Pin> callback;
 
@@ -22,7 +26,7 @@ public class PinTransferHandler extends TransferHandler {
 
     @Override
     public boolean canImport(TransferSupport support) {
-        if (!support.isDataFlavorSupported(FLAVOR)) {
+        if (!support.isDataFlavorSupported(PIN_FLAVOR)) {
             return false;
         }
 
@@ -44,12 +48,12 @@ public class PinTransferHandler extends TransferHandler {
         
         Object data = null;
         try {
-            data = support.getTransferable().getTransferData(FLAVOR);
+            data = support.getTransferable().getTransferData(PIN_FLAVOR);
         } catch (UnsupportedFlavorException | IOException e) {
             e.printStackTrace();
         }
 
-        if(data != null && FLAVOR.getRepresentationClass().isInstance(data)) {
+        if(data != null && PIN_FLAVOR.getRepresentationClass().isInstance(data)) {
             callback.accept((Pin)data, (Pin)support.getComponent());
             return true;
         }
